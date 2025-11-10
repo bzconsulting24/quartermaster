@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Briefcase, Users, CheckSquare, Calendar, BarChart3, Plus } from 'lucide-react';
+import { Home, Briefcase, Users, CheckSquare, Calendar, BarChart3, Plus, FileText } from 'lucide-react';
 import { COLORS } from '../data/mockData';
 
 const NavigationTabs = ({ currentTab, setCurrentTab }) => {
@@ -8,6 +8,7 @@ const NavigationTabs = ({ currentTab, setCurrentTab }) => {
     { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
     { id: 'accounts', label: 'Accounts', icon: Users },
     { id: 'contacts', label: 'Contacts', icon: Users },
+    { id: 'invoices', label: 'Invoices', icon: FileText },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'calendar', label: 'Calendar', icon: Calendar },
     { id: 'reports', label: 'Reports', icon: BarChart3 },

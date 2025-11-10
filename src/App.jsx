@@ -6,6 +6,7 @@ import NotificationsPanel from './components/NotificationsPanel';
 import HomeView from './components/HomeView';
 import AccountsView from './components/AccountsView';
 import ContactsView from './components/ContactsView';
+import InvoicesView from './components/InvoicesView';
 import TasksView from './components/TasksView';
 import CalendarView from './components/CalendarView';
 import ReportsView from './components/ReportsView';
@@ -81,6 +82,7 @@ export default function App() {
 
         {currentTab === 'accounts' && <AccountsView />}
         {currentTab === 'contacts' && <ContactsView />}
+        {currentTab === 'invoices' && <InvoicesView />}
         {currentTab === 'tasks' && <TasksView />}
         {currentTab === 'calendar' && <CalendarView />}
         {currentTab === 'reports' && <ReportsView />}

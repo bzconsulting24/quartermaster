@@ -63,3 +63,14 @@ export const mockContacts = [
   { id: 7, name: 'Tom Anderson', title: 'IT Manager', account: 'RetailMax', email: 'tom@retailmax.com', phone: '555-0106', owner: 'Michael Chen', lastContact: '2024-02-03' },
   { id: 8, name: 'Emily White', title: 'SVP Technology', account: 'FinanceHub', email: 'emily@financehub.com', phone: '555-0107', owner: 'John Williams', lastContact: '2024-02-09' },
 ];
+
+export const mockInvoices = [
+  { id: 'INV-001', account: 'Acme Corporation', contact: 'John Doe', amount: 50000, status: 'paid', issueDate: '2024-01-15', dueDate: '2024-02-15', paidDate: '2024-02-10', items: [{ description: 'Enterprise Package - Annual License', quantity: 1, rate: 50000 }], notes: 'Payment received via wire transfer' },
+  { id: 'INV-002', account: 'TechStart Inc', contact: 'Jane Smith', amount: 15000, status: 'sent', issueDate: '2024-02-01', dueDate: '2024-03-01', paidDate: null, items: [{ description: 'SMB Package - Q1 Services', quantity: 1, rate: 15000 }], notes: 'Invoice sent via email on 2024-02-01' },
+  { id: 'INV-003', account: 'BuildCo Ltd', contact: 'Bob Johnson', amount: 25000, status: 'overdue', issueDate: '2024-01-10', dueDate: '2024-02-10', paidDate: null, items: [{ description: 'Expansion Services', quantity: 1, rate: 25000 }], notes: 'Follow-up required - overdue by 1 day' },
+  { id: 'INV-004', account: 'DataFlow Inc', contact: 'Alice Brown', amount: 75000, status: 'sent', issueDate: '2024-02-05', dueDate: '2024-03-05', paidDate: null, items: [{ description: 'Implementation Services', quantity: 1, rate: 60000 }, { description: 'Training & Support', quantity: 1, rate: 15000 }], notes: 'Awaiting approval from CFO' },
+  { id: 'INV-005', account: 'CloudNine Corp', contact: 'Mike Wilson', amount: 40000, status: 'paid', issueDate: '2024-01-20', dueDate: '2024-02-20', paidDate: '2024-02-18', items: [{ description: 'Cloud Solutions Package', quantity: 1, rate: 40000 }], notes: 'Paid on time' },
+  { id: 'INV-006', account: 'RetailMax', contact: 'Tom Anderson', amount: 12000, status: 'draft', issueDate: '2024-02-11', dueDate: '2024-03-11', paidDate: null, items: [{ description: 'Retail Integration Services', quantity: 1, rate: 12000 }], notes: 'Draft - pending client review' },
+  { id: 'INV-007', account: 'FinanceHub', contact: 'Emily White', amount: 85000, status: 'sent', issueDate: '2024-02-08', dueDate: '2024-03-08', paidDate: null, items: [{ description: 'Financial Platform Integration', quantity: 1, rate: 70000 }, { description: 'Compliance Audit', quantity: 1, rate: 15000 }], notes: 'Sent to procurement department' },
+  { id: 'INV-008', account: 'Acme Corporation', contact: 'Sarah Davis', amount: 30000, status: 'overdue', issueDate: '2024-01-05', dueDate: '2024-02-05', paidDate: null, items: [{ description: 'Consulting Services - January', quantity: 1, rate: 30000 }], notes: 'Multiple follow-up attempts made' },
+];
