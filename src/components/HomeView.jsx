@@ -4,7 +4,7 @@ import { COLORS, mockActivities } from '../data/mockData';
 
 const HomeView = () => {
   const stats = [
-    { label: 'Total Revenue', value: '$205K', change: '+15%', icon: DollarSign, color: COLORS.gold },
+    { label: 'Total Revenue', value: '₱205K', change: '+15%', icon: DollarSign, color: COLORS.gold },
     { label: 'Active Deals', value: '24', change: '+3', icon: Briefcase, color: '#60A5FA' },
     { label: 'New Contacts', value: '48', change: '+12', icon: Users, color: '#10B981' },
     { label: 'Tasks Due', value: '8', change: '-2', icon: CheckSquare, color: '#F59E0B' },
@@ -14,7 +14,7 @@ const HomeView = () => {
     <div style={{ padding: '24px', background: '#F9FAFB', minHeight: '100%' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark, marginBottom: '8px' }}>
-          Good morning, John
+          Good morning, Deo
         </h1>
         <p style={{ fontSize: '16px', color: '#6B7280' }}>
           Here's what's happening with your sales today

@@ -45,7 +45,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }) => {
             <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
               <span>{opportunity.account}</span>
               <span>•</span>
-              <span>${opportunity.amount.toLocaleString()}</span>
+              <span>₱{opportunity.amount.toLocaleString()}</span>
               <span>•</span>
               <span>{opportunity.stage}</span>
             </div>
@@ -85,7 +85,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }) => {
                 <div style={{ background: '#F9FAFB', padding: '16px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Amount</div>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>${opportunity.amount.toLocaleString()}</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>₱{opportunity.amount.toLocaleString()}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Close Date</div>

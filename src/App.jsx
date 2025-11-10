@@ -21,7 +21,7 @@ export default function App() {
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const currentUser = { name: 'John Doe', initials: 'JD' };
+  const currentUser = { name: 'Deo Umali', initials: 'DU' };
 
   const handleDragStart = (e, opportunity) => {
     setDraggedItem(opportunity);

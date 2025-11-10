@@ -7,7 +7,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
     <div style={{ marginBottom: '16px' }}>
       <h2 style={{ fontSize: '18px', fontWeight: '600', color: COLORS.navyDark, marginBottom: '8px' }}>Sales Pipeline</h2>
       <div style={{ display: 'flex', gap: '8px', fontSize: '14px', color: '#6B7280' }}>
-        <span>Total Pipeline: <strong style={{ color: COLORS.navyDark }}>${opportunities.reduce((sum, o) => sum + o.amount, 0).toLocaleString()}</strong></span>
+        <span>Total Pipeline: <strong style={{ color: COLORS.navyDark }}>₱{opportunities.reduce((sum, o) => sum + o.amount, 0).toLocaleString()}</strong></span>
         <span>•</span>
         <span>Total Opportunities: <strong style={{ color: COLORS.navyDark }}>{opportunities.length}</strong></span>
       </div>
@@ -34,7 +34,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                 <span style={{ background: COLORS.gold, color: COLORS.navyDark, padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>{stageOpps.length}</span>
               </div>
               <div style={{ padding: '0 12px 12px', fontSize: '12px', color: COLORS.gold, fontWeight: '600' }}>
-                ${(stageTotal / 1000).toFixed(0)}K
+                ₱{(stageTotal / 1000).toFixed(0)}K
               </div>
             </div>
 
@@ -84,7 +84,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontSize: '18px', fontWeight: 'bold', color: COLORS.navyDark }}>
-                      ${(opp.amount / 1000).toFixed(0)}K
+                      ₱{(opp.amount / 1000).toFixed(0)}K
                     </span>
                     <span style={{ fontSize: '12px', color: '#6B7280' }}>{opp.closeDate}</span>
                   </div>

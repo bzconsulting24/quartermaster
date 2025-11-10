@@ -89,10 +89,10 @@ const InvoicesView = () => {
         marginBottom: '24px'
       }}>
         {[
-          { label: 'Total Invoiced', value: `$${(totalStats.total / 1000).toFixed(0)}K`, color: COLORS.navyDark },
-          { label: 'Paid', value: `$${(totalStats.paid / 1000).toFixed(0)}K`, color: '#10B981' },
-          { label: 'Pending', value: `$${(totalStats.pending / 1000).toFixed(0)}K`, color: '#3B82F6' },
-          { label: 'Overdue', value: `$${(totalStats.overdue / 1000).toFixed(0)}K`, color: '#EF4444' },
+          { label: 'Total Invoiced', value: `₱${(totalStats.total / 1000).toFixed(0)}K`, color: COLORS.navyDark },
+          { label: 'Paid', value: `₱${(totalStats.paid / 1000).toFixed(0)}K`, color: '#10B981' },
+          { label: 'Pending', value: `₱${(totalStats.pending / 1000).toFixed(0)}K`, color: '#3B82F6' },
+          { label: 'Overdue', value: `₱${(totalStats.overdue / 1000).toFixed(0)}K`, color: '#EF4444' },
         ].map((stat, idx) => (
           <div
             key={idx}
@@ -322,7 +322,7 @@ const InvoicesView = () => {
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span style={{ fontSize: '16px', fontWeight: '600', color: COLORS.navyDark }}>
-                        ${invoice.amount.toLocaleString()}
+                        ₱{invoice.amount.toLocaleString()}
                       </span>
                     </td>
                     <td style={{ padding: '16px' }}>
@@ -582,10 +582,10 @@ const InvoicesView = () => {
                           {item.quantity}
                         </td>
                         <td style={{ padding: '12px', textAlign: 'right', fontSize: '14px', color: '#374151' }}>
-                          ${item.rate.toLocaleString()}
+                          ₱{item.rate.toLocaleString()}
                         </td>
                         <td style={{ padding: '12px', textAlign: 'right', fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                          ${(item.quantity * item.rate).toLocaleString()}
+                          ₱{(item.quantity * item.rate).toLocaleString()}
                         </td>
                       </tr>
                     ))}
@@ -596,7 +596,7 @@ const InvoicesView = () => {
                         Total:
                       </td>
                       <td style={{ padding: '16px', textAlign: 'right', fontSize: '20px', fontWeight: 'bold', color: COLORS.gold }}>
-                        ${selectedInvoice.amount.toLocaleString()}
+                        ₱{selectedInvoice.amount.toLocaleString()}
                       </td>
                     </tr>
                   </tfoot>
