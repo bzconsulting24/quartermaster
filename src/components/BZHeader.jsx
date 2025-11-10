@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Search, Bell, HelpCircle, Settings } from 'lucide-react';
+import { Search, Bell, HelpCircle, Settings } from 'lucide-react';
 import { COLORS } from '../data/mockData';
 
 const BZHeader = ({ currentUser, notifications, setShowNotifications }) => (
@@ -13,13 +13,25 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications }) => (
     boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
   }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flex: 1 }}>
-      <button style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', color: 'white' }}>
-        <Grid size={20} />
-      </button>
+      <div style={{
+        width: '36px',
+        height: '36px',
+        border: `2px solid ${COLORS.gold}`,
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        color: COLORS.gold,
+        cursor: 'pointer'
+      }}>
+        BZ
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.gold }}>BZ</span>
-        <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>CRM</span>
+        <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Quartermaster</span>
       </div>
 
       <div style={{ flex: 1, maxWidth: '600px', position: 'relative' }}>
