@@ -1,0 +1,68 @@
+import React from 'react';
+import { Home, Briefcase, Users, CheckSquare, Calendar, BarChart3, Plus } from 'lucide-react';
+import { COLORS } from '../data/mockData';
+
+const NavigationTabs = ({ currentTab, setCurrentTab }) => {
+  const tabs = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
+    { id: 'accounts', label: 'Accounts', icon: Users },
+    { id: 'contacts', label: 'Contacts', icon: Users },
+    { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+    { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
+  ];
+
+  return (
+    <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = currentTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setCurrentTab(tab.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontWeight: '500',
+                borderBottom: isActive ? `3px solid ${COLORS.gold}` : '3px solid transparent',
+                background: isActive ? 'linear-gradient(to bottom, #FEF3C7 0%, transparent 100%)' : 'transparent',
+                color: isActive ? COLORS.navyDark : '#6B7280',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Icon size={16} />
+              {tab.label}
+            </button>
+          );
+        })}
+        <button style={{
+          marginLeft: 'auto',
+          background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
+          color: 'white',
+          border: 'none',
+          padding: '8px 16px',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '14px',
+          fontWeight: '500'
+        }}>
+          <Plus size={16} />
+          New
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default NavigationTabs;
