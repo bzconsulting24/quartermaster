@@ -5,7 +5,7 @@ const ReportsView = () => (
   <div style={{ padding: '24px' }}>
     <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark, marginBottom: '24px' }}>Reports & Analytics</h1>
 
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
       {[
         { label: 'Total Pipeline', value: '$205K', change: '+15%' },
         { label: 'Won This Month', value: '$40K', change: '+22%' },

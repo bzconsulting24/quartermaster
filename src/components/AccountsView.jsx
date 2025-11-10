@@ -112,7 +112,8 @@ const AccountsView = () => {
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         overflow: 'hidden'
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="table-responsive">
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
           <thead>
             <tr style={{ background: '#F9FAFB', borderBottom: `2px solid ${COLORS.gold}` }}>
               <th style={{
@@ -284,6 +285,7 @@ const AccountsView = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

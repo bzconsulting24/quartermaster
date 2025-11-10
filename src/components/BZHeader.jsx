@@ -33,11 +33,11 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications }) => (
         <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Quartermaster</span>
       </div>
 
-      <div style={{ flex: 1, maxWidth: '600px', position: 'relative' }}>
+      <div style={{ flex: 1, maxWidth: '600px', minWidth: '150px', position: 'relative' }}>
         <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', width: '16px', height: '16px' }} />
         <input
           type="text"
-          placeholder="Search accounts, contacts, opportunities..."
+          placeholder="Search..."
           style={{
             width: '100%',
             padding: '8px 16px 8px 40px',

@@ -15,7 +15,7 @@ const NavigationTabs = ({ currentTab, setCurrentTab }) => {
 
   return (
     <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch' }}>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = currentTab === tab.id;
@@ -35,7 +35,9 @@ const NavigationTabs = ({ currentTab, setCurrentTab }) => {
                 color: isActive ? COLORS.navyDark : '#6B7280',
                 border: 'none',
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
               }}
             >
               <Icon size={16} />
