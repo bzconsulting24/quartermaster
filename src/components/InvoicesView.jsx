@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Search, Filter, FileText, Send, Check, X, Eye, Download, DollarSign } from 'lucide-react';
-import { COLORS, mockInvoices } from '../data/mockData';
+import { COLORS, mockInvoices, formatCurrency } from '../data/mockData';
 
 const InvoicesView = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,10 +89,10 @@ const InvoicesView = () => {
         marginBottom: '24px'
       }}>
         {[
-          { label: 'Total Invoiced', value: `₱${(totalStats.total / 1000).toFixed(0)}K`, color: COLORS.navyDark },
-          { label: 'Paid', value: `₱${(totalStats.paid / 1000).toFixed(0)}K`, color: '#10B981' },
-          { label: 'Pending', value: `₱${(totalStats.pending / 1000).toFixed(0)}K`, color: '#3B82F6' },
-          { label: 'Overdue', value: `₱${(totalStats.overdue / 1000).toFixed(0)}K`, color: '#EF4444' },
+          { label: 'Total Invoiced', value: formatCurrency(totalStats.total), color: COLORS.navyDark },
+          { label: 'Paid', value: formatCurrency(totalStats.paid), color: '#10B981' },
+          { label: 'Pending', value: formatCurrency(totalStats.pending), color: '#3B82F6' },
+          { label: 'Overdue', value: formatCurrency(totalStats.overdue), color: '#EF4444' },
         ].map((stat, idx) => (
           <div
             key={idx}

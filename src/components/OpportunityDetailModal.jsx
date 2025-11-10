@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Phone, Calendar, CheckSquare, Plus, Upload, Paperclip, Eye } from 'lucide-react';
-import { COLORS, mockActivities, mockDocuments } from '../data/mockData';
+import { COLORS, mockActivities, mockDocuments, formatCurrency } from '../data/mockData';
 
 const OpportunityDetailModal = ({ opportunity, onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -45,7 +45,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }) => {
             <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
               <span>{opportunity.account}</span>
               <span>•</span>
-              <span>₱{opportunity.amount.toLocaleString()}</span>
+              <span>{formatCurrency(opportunity.amount)}</span>
               <span>•</span>
               <span>{opportunity.stage}</span>
             </div>
@@ -85,7 +85,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }) => {
                 <div style={{ background: '#F9FAFB', padding: '16px', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Amount</div>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>₱{opportunity.amount.toLocaleString()}</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{formatCurrency(opportunity.amount)}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Close Date</div>

@@ -5,6 +5,16 @@ export const COLORS = {
   goldDark: '#FFA500',
 };
 
+// Currency formatting helper
+export const formatCurrency = (amount) => {
+  if (amount >= 1000000) {
+    return `₱${(amount / 1000000).toFixed(1)}M`;
+  } else if (amount >= 1000) {
+    return `₱${(amount / 1000).toFixed(0)}K`;
+  }
+  return `₱${amount.toLocaleString()}`;
+};
+
 export const mockOpportunities = [
   { id: 1, name: 'Acme Corp - Enterprise', account: 'Acme Corporation', contact: 'John Doe', amount: 5000000, stage: 'Prospecting', closeDate: '2024-03-15', owner: 'Sarah Johnson', probability: 25, email: 'john@acme.com', phone: '555-0100' },
   { id: 2, name: 'TechStart - SMB Package', account: 'TechStart Inc', contact: 'Jane Smith', amount: 1500000, stage: 'Qualification', closeDate: '2024-02-28', owner: 'Michael Chen', probability: 40, email: 'jane@techstart.com', phone: '555-0101' },
