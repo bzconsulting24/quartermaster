@@ -3,6 +3,9 @@ import BZHeader from './components/BZHeader';
 import NavigationTabs from './components/NavigationTabs';
 import OpportunityDetailModal from './components/OpportunityDetailModal';
 import NotificationsPanel from './components/NotificationsPanel';
+import HomeView from './components/HomeView';
+import AccountsView from './components/AccountsView';
+import ContactsView from './components/ContactsView';
 import TasksView from './components/TasksView';
 import CalendarView from './components/CalendarView';
 import ReportsView from './components/ReportsView';
@@ -10,7 +13,7 @@ import BZPipeline from './components/BZPipeline';
 import { COLORS, mockOpportunities } from './data/mockData';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('opportunities');
+  const [currentTab, setCurrentTab] = useState('home');
   const [view, setView] = useState('pipeline');
   const [opportunities, setOpportunities] = useState(mockOpportunities);
   const [draggedItem, setDraggedItem] = useState(null);
@@ -43,6 +46,8 @@ export default function App() {
       <NavigationTabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       <div style={{ flex: 1, overflow: 'auto' }}>
+        {currentTab === 'home' && <HomeView />}
+
         {currentTab === 'opportunities' && (
           <>
             <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '8px 16px', display: 'flex', gap: '8px' }}>
@@ -74,6 +79,8 @@ export default function App() {
           </>
         )}
 
+        {currentTab === 'accounts' && <AccountsView />}
+        {currentTab === 'contacts' && <ContactsView />}
         {currentTab === 'tasks' && <TasksView />}
         {currentTab === 'calendar' && <CalendarView />}
         {currentTab === 'reports' && <ReportsView />}

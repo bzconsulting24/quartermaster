@@ -42,3 +42,24 @@ export const stages = [
   { id: 'Closed Won', name: 'Closed Won', color: '#10B981' },
   { id: 'Closed Lost', name: 'Closed Lost', color: '#EF4444' },
 ];
+
+export const mockAccounts = [
+  { id: 1, name: 'Acme Corporation', industry: 'Technology', type: 'Enterprise', revenue: '$50M', employees: 500, owner: 'Sarah Johnson', phone: '555-1000', website: 'acme.com', location: 'San Francisco, CA' },
+  { id: 2, name: 'TechStart Inc', industry: 'Software', type: 'SMB', revenue: '$5M', employees: 50, owner: 'Michael Chen', phone: '555-1001', website: 'techstart.io', location: 'Austin, TX' },
+  { id: 3, name: 'BuildCo Ltd', industry: 'Construction', type: 'Mid-Market', revenue: '$25M', employees: 200, owner: 'Sarah Johnson', phone: '555-1002', website: 'buildco.com', location: 'Chicago, IL' },
+  { id: 4, name: 'DataFlow Inc', industry: 'Data Analytics', type: 'Enterprise', revenue: '$100M', employees: 800, owner: 'John Williams', phone: '555-1003', website: 'dataflow.com', location: 'New York, NY' },
+  { id: 5, name: 'CloudNine Corp', industry: 'Cloud Services', type: 'Enterprise', revenue: '$75M', employees: 600, owner: 'Sarah Johnson', phone: '555-1004', website: 'cloudnine.com', location: 'Seattle, WA' },
+  { id: 6, name: 'RetailMax', industry: 'Retail', type: 'Mid-Market', revenue: '$15M', employees: 150, owner: 'Michael Chen', phone: '555-1005', website: 'retailmax.com', location: 'Los Angeles, CA' },
+  { id: 7, name: 'FinanceHub', industry: 'Financial Services', type: 'Enterprise', revenue: '$200M', employees: 1200, owner: 'John Williams', phone: '555-1006', website: 'financehub.com', location: 'Boston, MA' },
+];
+
+export const mockContacts = [
+  { id: 1, name: 'John Doe', title: 'CEO', account: 'Acme Corporation', email: 'john@acme.com', phone: '555-0100', owner: 'Sarah Johnson', lastContact: '2024-02-07' },
+  { id: 2, name: 'Jane Smith', title: 'VP of Sales', account: 'TechStart Inc', email: 'jane@techstart.com', phone: '555-0101', owner: 'Michael Chen', lastContact: '2024-02-06' },
+  { id: 3, name: 'Bob Johnson', title: 'CTO', account: 'BuildCo Ltd', email: 'bob@buildco.com', phone: '555-0102', owner: 'Sarah Johnson', lastContact: '2024-02-05' },
+  { id: 4, name: 'Alice Brown', title: 'Director of IT', account: 'DataFlow Inc', email: 'alice@dataflow.com', phone: '555-0103', owner: 'John Williams', lastContact: '2024-02-08' },
+  { id: 5, name: 'Mike Wilson', title: 'VP of Operations', account: 'CloudNine Corp', email: 'mike@cloudnine.com', phone: '555-0104', owner: 'Sarah Johnson', lastContact: '2024-02-04' },
+  { id: 6, name: 'Sarah Davis', title: 'CFO', account: 'Acme Corporation', email: 'sarah@acme.com', phone: '555-0105', owner: 'Sarah Johnson', lastContact: '2024-02-07' },
+  { id: 7, name: 'Tom Anderson', title: 'IT Manager', account: 'RetailMax', email: 'tom@retailmax.com', phone: '555-0106', owner: 'Michael Chen', lastContact: '2024-02-03' },
+  { id: 8, name: 'Emily White', title: 'SVP Technology', account: 'FinanceHub', email: 'emily@financehub.com', phone: '555-0107', owner: 'John Williams', lastContact: '2024-02-09' },
+];
