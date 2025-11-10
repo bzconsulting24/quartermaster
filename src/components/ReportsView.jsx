@@ -7,10 +7,10 @@ const ReportsView = () => (
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
       {[
-        { label: 'Total Pipeline', value: '₱205K', change: '+15%' },
-        { label: 'Won This Month', value: '₱40K', change: '+22%' },
+        { label: 'Total Pipeline', value: '₱20.5M', change: '+15%' },
+        { label: 'Won This Month', value: '₱4M', change: '+22%' },
         { label: 'Win Rate', value: '67%', change: '+5%' },
-        { label: 'Avg Deal Size', value: '₱41K', change: '+8%' },
+        { label: 'Avg Deal Size', value: '₱4.1M', change: '+8%' },
       ].map((stat, idx) => (
         <div key={idx} style={{
           background: 'white',

@@ -4,7 +4,7 @@ import { COLORS, mockActivities } from '../data/mockData';
 
 const HomeView = () => {
   const stats = [
-    { label: 'Total Revenue', value: '₱205K', change: '+15%', icon: TrendingUp, color: COLORS.gold },
+    { label: 'Total Revenue', value: '₱20.5M', change: '+15%', icon: TrendingUp, color: COLORS.gold },
     { label: 'Active Deals', value: '24', change: '+3', icon: Briefcase, color: '#60A5FA' },
     { label: 'New Contacts', value: '48', change: '+12', icon: Users, color: '#10B981' },
     { label: 'Tasks Due', value: '8', change: '-2', icon: CheckSquare, color: '#F59E0B' },
