@@ -30,7 +30,6 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications }) => (
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.gold }}>BZ</span>
         <span style={{ fontSize: '28px', fontWeight: 'bold', color: 'white' }}>Quartermaster</span>
       </div>
 
