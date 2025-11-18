@@ -76,6 +76,7 @@ services:
       - '5173:5173'
     environment:
       - NODE_ENV=development
+      - DOCKER_ENV=true
     volumes:
       - ./src:/app/src
       - ./index.html:/app/index.html

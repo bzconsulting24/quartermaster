@@ -115,7 +115,7 @@ export default function App() {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#F9FAFB' }}>
       <BZHeader currentUser={currentUser} notifications={3} setShowNotifications={setShowNotifications} setShowAssistant={setShowAssistant} onOpenCommand={() => setCommandOpen(true)} focusMode={focusMode} onToggleFocus={() => { const next = !focusMode; setFocusMode(next); localStorage.setItem('focusMode', next ? '1' : '0'); }} />
-      {!focusMode && (<NavigationTabs  />)}
+      {!focusMode && (<NavigationTabs currentTab={currentTab} setCurrentTab={setCurrentTab} />)}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {error && (
