@@ -1,4 +1,19 @@
-import { PrismaClient, type Stage, ActivityType, type InvoiceStatus, type TaskPriority, type TaskStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  ActivityType,
+  type Stage,
+  type InvoiceStatus,
+  type TaskPriority,
+  type TaskStatus,
+  type LeadStatus,
+  type QuoteStatus,
+  type ContractStatus,
+  type WorkflowTriggerType,
+  type WorkflowActionType,
+  type AIInsightType,
+  type NotificationType,
+  type NotificationStatus
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -32,17 +47,55 @@ const contactsSeed = [
   { name: 'Emily White', title: 'SVP Technology', account: 'FinanceHub', email: 'emily@financehub.com', phone: '555-0107', owner: 'John Williams', lastContact: '2024-02-09' }
 ];
 
+const productsSeed = [
+  { name: 'Quartermaster Enterprise Suite', sku: 'CRM-ENT', description: 'Full platform license with automation add-ons', unitPrice: 5_000_000 },
+  { name: 'Quartermaster Growth Pack', sku: 'CRM-GROW', description: 'Mid-market bundle for 100 seats', unitPrice: 2_200_000 },
+  { name: 'Insights AI Add-on', sku: 'AI-INSIGHT', description: 'AI-generated recommendations per opportunity', unitPrice: 750_000 },
+  { name: 'Implementation Services', sku: 'SERV-IMP', description: 'Professional services block', unitPrice: 1_500_000 }
+];
+
+const leadsSeed = [
+  { name: 'Lara Patel', company: 'Acme Corporation', email: 'lara.patel@acme.com', phone: '555-0311', source: 'Website', status: 'WORKING', owner: 'Sarah Johnson', score: 72, notes: 'Needs enterprise analytics add-on', account: 'Acme Corporation', opportunity: 'Acme Corp - Enterprise' },
+  { name: 'Carlos Reyes', company: 'TechStart Inc', email: 'carlos@techstart.com', phone: '555-0412', source: 'Referral', status: 'NURTURING', owner: 'Michael Chen', score: 58, notes: 'Interested in AI upsell', account: 'TechStart Inc', opportunity: 'TechStart - SMB Package' },
+  { name: 'Priya Nair', company: 'DataFlow Inc', email: 'priya@dataflow.com', phone: '555-0513', source: 'Event', status: 'QUALIFIED', owner: 'John Williams', score: 80, notes: 'Decision in Q2', account: 'DataFlow Inc', opportunity: 'DataFlow Implementation' }
+];
+
 const opportunitiesSeed = [
-  { name: 'Acme Corp - Enterprise', account: 'Acme Corporation', contact: 'john@acme.com', amount: 5_000_000, stage: 'Prospecting', closeDate: '2024-03-15', owner: 'Sarah Johnson', probability: 25, email: 'john@acme.com', phone: '555-0100' },
-  { name: 'TechStart - SMB Package', account: 'TechStart Inc', contact: 'jane@techstart.com', amount: 1_500_000, stage: 'Qualification', closeDate: '2024-02-28', owner: 'Michael Chen', probability: 40, email: 'jane@techstart.com', phone: '555-0101' },
+  { name: 'Acme Corp - Enterprise', account: 'Acme Corporation', contact: 'john@acme.com', amount: 5_000_000, stage: 'Prospecting', closeDate: '2024-03-15', owner: 'Sarah Johnson', probability: 25, email: 'john@acme.com', phone: '555-0100', leadEmail: 'lara.patel@acme.com' },
+  { name: 'TechStart - SMB Package', account: 'TechStart Inc', contact: 'jane@techstart.com', amount: 1_500_000, stage: 'Qualification', closeDate: '2024-02-28', owner: 'Michael Chen', probability: 40, email: 'jane@techstart.com', phone: '555-0101', leadEmail: 'carlos@techstart.com' },
   { name: 'BuildCo - Expansion', account: 'BuildCo Ltd', contact: 'bob@buildco.com', amount: 2_500_000, stage: 'Proposal/Price Quote', closeDate: '2024-04-10', owner: 'Sarah Johnson', probability: 60, email: 'bob@buildco.com', phone: '555-0102' },
-  { name: 'DataFlow Implementation', account: 'DataFlow Inc', contact: 'alice@dataflow.com', amount: 7_500_000, stage: 'Negotiation/Review', closeDate: '2024-02-20', owner: 'John Williams', probability: 75, email: 'alice@dataflow.com', phone: '555-0103' },
+  { name: 'DataFlow Implementation', account: 'DataFlow Inc', contact: 'alice@dataflow.com', amount: 7_500_000, stage: 'Negotiation/Review', closeDate: '2024-02-20', owner: 'John Williams', probability: 75, email: 'alice@dataflow.com', phone: '555-0103', leadEmail: 'priya@dataflow.com' },
   { name: 'CloudNine Solutions', account: 'CloudNine Corp', contact: 'mike@cloudnine.com', amount: 4_000_000, stage: 'Closed Won', closeDate: '2024-01-30', owner: 'Sarah Johnson', probability: 100, email: 'mike@cloudnine.com', phone: '555-0104' }
 ];
 
+const workflowRulesSeed = [
+  {
+    name: 'Stalled Negotiation Reminder',
+    description: 'Alert owners when negotiations sit idle for 5 days',
+    triggerType: 'INACTIVITY',
+    triggerConfig: { stage: 'Negotiation/Review', days: 5 },
+    conditionConfig: { probabilityLessThan: 80 },
+    actions: [
+      { type: 'CREATE_TASK', actionConfig: { title: 'Follow up on negotiation', priority: 'HIGH' } },
+      { type: 'INVOKE_AI', actionConfig: { insightType: 'NEXT_STEP' } }
+    ]
+  },
+  {
+    name: 'Proposal Sent Nudges',
+    description: 'Tasks + reminder emails after proposals go out',
+    triggerType: 'OPPORTUNITY_STAGE_CHANGED',
+    triggerConfig: { toStage: 'Proposal/Price Quote' },
+    conditionConfig: { amountGreaterThan: 2_000_000 },
+    actions: [
+      { type: 'CREATE_TASK', actionConfig: { title: 'Confirm proposal receipt', priority: 'MEDIUM' } },
+      { type: 'SEND_EMAIL', actionConfig: { template: 'proposal-follow-up' } }
+    ]
+  }
+];
+
 const tasksSeed = [
-  { title: 'Follow up with Acme Corp', dueDate: '2024-02-10', priority: 'HIGH', status: 'OPEN', assignedTo: 'Sarah Johnson', opportunity: 'Acme Corp - Enterprise' },
-  { title: 'Send proposal to TechStart', dueDate: '2024-02-12', priority: 'MEDIUM', status: 'OPEN', assignedTo: 'Michael Chen', opportunity: 'TechStart - SMB Package' },
+  { title: 'Follow up with Acme Corp', dueDate: '2024-02-10', priority: 'HIGH', status: 'OPEN', assignedTo: 'Sarah Johnson', opportunity: 'Acme Corp - Enterprise', workflowRule: 'Stalled Negotiation Reminder' },
+  { title: 'Send proposal to TechStart', dueDate: '2024-02-12', priority: 'MEDIUM', status: 'OPEN', assignedTo: 'Michael Chen', opportunity: 'TechStart - SMB Package', workflowRule: 'Proposal Sent Nudges' },
   { title: 'Schedule demo with BuildCo', dueDate: '2024-02-08', priority: 'HIGH', status: 'OVERDUE', assignedTo: 'Sarah Johnson', opportunity: 'BuildCo - Expansion' },
   { title: 'Prepare contract for DataFlow', dueDate: '2024-02-15', priority: 'LOW', status: 'OPEN', assignedTo: 'John Williams', opportunity: 'DataFlow Implementation' }
 ];
@@ -60,6 +113,42 @@ const activitiesSeed = [
   { type: ActivityType.NOTE, subject: 'Budget confirmation', description: 'CFO confirmed budget approval for Q1', performedBy: 'John Williams', opportunity: 'DataFlow Implementation' }
 ];
 
+const quotesSeed = [
+  {
+    number: 'Q-2024-001',
+    status: 'SENT',
+    account: 'Acme Corporation',
+    opportunity: 'Acme Corp - Enterprise',
+    total: 5_750_000,
+    currency: 'PHP',
+    issuedAt: '2024-02-01',
+    expiresAt: '2024-03-01',
+    notes: 'Includes AI add-on',
+    lines: [
+      { description: 'Quartermaster Enterprise Suite', quantity: 1, unitPrice: 5_000_000, product: 'CRM-ENT' },
+      { description: 'Insights AI Add-on', quantity: 1, unitPrice: 750_000, product: 'AI-INSIGHT' }
+    ]
+  },
+  {
+    number: 'Q-2024-002',
+    status: 'DRAFT',
+    account: 'TechStart Inc',
+    opportunity: 'TechStart - SMB Package',
+    total: 2_200_000,
+    currency: 'PHP',
+    issuedAt: '2024-02-05',
+    expiresAt: '2024-02-25',
+    lines: [
+      { description: 'Quartermaster Growth Pack', quantity: 1, unitPrice: 2_200_000, product: 'CRM-GROW' }
+    ]
+  }
+];
+
+const contractsSeed = [
+  { contractNumber: 'C-2024-001', status: 'ACTIVE', startDate: '2024-02-01', endDate: '2025-01-31', value: 4_000_000, terms: 'Net 45, auto-renew', account: 'CloudNine Corp', opportunity: 'CloudNine Solutions' },
+  { contractNumber: 'C-2024-002', status: 'DRAFT', startDate: '2024-03-01', endDate: '2025-02-28', value: 7_500_000, terms: 'Includes success plan', account: 'DataFlow Inc', opportunity: 'DataFlow Implementation' }
+];
+
 const documentsSeed = [
   { name: 'Proposal_Acme_v2.pdf', type: 'proposal', size: '2.4 MB', uploadedBy: 'Sarah Johnson', uploadedAt: '2024-02-05', opportunity: 'Acme Corp - Enterprise' },
   { name: 'Contract_TechStart.docx', type: 'contract', size: '1.1 MB', uploadedBy: 'Michael Chen', uploadedAt: '2024-02-03', opportunity: 'TechStart - SMB Package' },
@@ -67,9 +156,43 @@ const documentsSeed = [
   { name: 'Implementation_Playbook.pdf', type: 'proposal', size: '3.2 MB', uploadedBy: 'John Williams', uploadedAt: '2024-02-01', opportunity: 'DataFlow Implementation' }
 ];
 
+const aiInsightsSeed = [
+  { type: 'SUMMARY', summary: 'Acme wants unified view across regions; champion is CEO.', confidence: 80, opportunity: 'Acme Corp - Enterprise' },
+  { type: 'NEXT_STEP', summary: 'Schedule technical validation with BuildCo security team.', confidence: 67, opportunity: 'BuildCo - Expansion', task: 'Schedule demo with BuildCo' },
+  { type: 'RISK', summary: 'TechStart procurement pushing for discount; deal at risk.', confidence: 55, opportunity: 'TechStart - SMB Package' }
+];
+
+const notificationsSeed = [
+  { type: 'TASK', status: 'UNREAD', title: 'Task overdue', body: 'Schedule demo with BuildCo is overdue.', recipient: 'deo@bzcrm.com', account: 'BuildCo Ltd' },
+  { type: 'OPPORTUNITY', status: 'UNREAD', title: 'Negotiation reminder', body: 'DataFlow Implementation has been idle for 4 days.', recipient: 'deo@bzcrm.com', account: 'DataFlow Inc' },
+  { type: 'WORKFLOW', status: 'READ', title: 'Automation executed', body: 'Proposal follow-up task created for TechStart.', recipient: 'deo@bzcrm.com', account: 'TechStart Inc', readAt: '2024-02-10T12:00:00.000Z' }
+];
+
+const teamsSeed = [
+  { name: 'Enterprise Sales', description: 'Handles enterprise accounts' },
+  { name: 'Growth Team', description: 'Mid-market and SMB hunters' }
+];
+
+const userTeamsSeed = [
+  { userEmail: 'sarah.johnson@quartermaster.ai', role: 'Manager', team: 'Enterprise Sales' },
+  { userEmail: 'michael.chen@quartermaster.ai', role: 'AE', team: 'Growth Team' },
+  { userEmail: 'deo.umali@quartermaster.ai', role: 'VP Sales', team: 'Enterprise Sales' }
+];
+
 async function main() {
   console.info('🌱 Seeding Quartermaster database...');
 
+  await prisma.userTeam.deleteMany();
+  await prisma.team.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.aiInsight.deleteMany();
+  await prisma.workflowAction.deleteMany();
+  await prisma.workflowRule.deleteMany();
+  await prisma.contract.deleteMany();
+  await prisma.quoteLine.deleteMany();
+  await prisma.quote.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.lead.deleteMany();
   await prisma.invoiceItem.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.task.deleteMany();
@@ -79,13 +202,35 @@ async function main() {
   await prisma.contact.deleteMany();
   await prisma.account.deleteMany();
 
+  const teamRecords: Record<string, { id: number }> = {};
+  for (const team of teamsSeed) {
+    const record = await prisma.team.create({ data: team });
+    teamRecords[team.name] = { id: record.id };
+  }
+
+  for (const member of userTeamsSeed) {
+    const team = teamRecords[member.team];
+    if (!team) continue;
+    await prisma.userTeam.create({
+      data: {
+        userEmail: member.userEmail,
+        role: member.role,
+        teamId: team.id
+      }
+    });
+  }
+
+  const productRecords: Record<string, { id: number }> = {};
+  for (const product of productsSeed) {
+    const record = await prisma.product.create({ data: product });
+    if (product.sku) {
+      productRecords[product.sku] = { id: record.id };
+    }
+  }
+
   const accountRecords: Record<string, { id: number }> = {};
   for (const account of accountsSeed) {
-    const record = await prisma.account.upsert({
-      where: { name: account.name },
-      update: account,
-      create: account
-    });
+    const record = await prisma.account.create({ data: account });
     accountRecords[account.name] = { id: record.id };
   }
 
@@ -93,16 +238,8 @@ async function main() {
   for (const contact of contactsSeed) {
     const account = accountRecords[contact.account];
     if (!account) continue;
-    const record = await prisma.contact.upsert({
-      where: { email: contact.email },
-      update: {
-        name: contact.name,
-        title: contact.title,
-        phone: contact.phone,
-        owner: contact.owner,
-        lastContact: new Date(contact.lastContact)
-      },
-      create: {
+    const record = await prisma.contact.create({
+      data: {
         name: contact.name,
         title: contact.title,
         email: contact.email,
@@ -115,25 +252,59 @@ async function main() {
     contactRecords[contact.email] = { id: record.id };
   }
 
+  const leadRecords: Record<string, { id: number }> = {};
+  for (const lead of leadsSeed) {
+    const account = lead.account ? accountRecords[lead.account] : undefined;
+    const record = await prisma.lead.create({
+      data: {
+        name: lead.name,
+        company: lead.company,
+        email: lead.email,
+        phone: lead.phone,
+        source: lead.source,
+        status: lead.status as LeadStatus,
+        owner: lead.owner,
+        score: lead.score,
+        notes: lead.notes,
+        accountId: account?.id
+      }
+    });
+    if (lead.email) {
+      leadRecords[lead.email] = { id: record.id };
+    }
+  }
+
+  const workflowRuleRecords: Record<string, { id: number }> = {};
+  for (const rule of workflowRulesSeed) {
+    const record = await prisma.workflowRule.create({
+      data: {
+        name: rule.name,
+        description: rule.description,
+        triggerType: rule.triggerType as WorkflowTriggerType,
+        triggerConfig: rule.triggerConfig,
+        conditionConfig: rule.conditionConfig
+      }
+    });
+    workflowRuleRecords[rule.name] = { id: record.id };
+    for (const action of rule.actions) {
+      await prisma.workflowAction.create({
+        data: {
+          type: action.type as WorkflowActionType,
+          actionConfig: action.actionConfig,
+          ruleId: record.id
+        }
+      });
+    }
+  }
+
   const opportunityRecords: Record<string, { id: number }> = {};
   for (const opportunity of opportunitiesSeed) {
     const account = accountRecords[opportunity.account];
     const contact = contactRecords[opportunity.contact];
     if (!account) continue;
-    const record = await prisma.opportunity.upsert({
-      where: { name: opportunity.name },
-      update: {
-        amount: opportunity.amount,
-        closeDate: new Date(opportunity.closeDate),
-        probability: opportunity.probability,
-        owner: opportunity.owner,
-        stage: stageLabelToEnum[opportunity.stage],
-        email: opportunity.email,
-        phone: opportunity.phone,
-        accountId: account.id,
-        contactId: contact?.id
-      },
-      create: {
+    const lead = opportunity.leadEmail ? leadRecords[opportunity.leadEmail] : undefined;
+    const record = await prisma.opportunity.create({
+      data: {
         name: opportunity.name,
         amount: opportunity.amount,
         closeDate: new Date(opportunity.closeDate),
@@ -143,10 +314,20 @@ async function main() {
         email: opportunity.email,
         phone: opportunity.phone,
         accountId: account.id,
-        contactId: contact?.id
+        contactId: contact?.id,
+        leadId: lead?.id
       }
     });
     opportunityRecords[opportunity.name] = { id: record.id };
+    if (lead) {
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: {
+          status: 'QUALIFIED',
+          opportunityId: record.id
+        }
+      });
+    }
   }
 
   for (const activity of activitiesSeed) {
@@ -162,18 +343,22 @@ async function main() {
     });
   }
 
+  const taskRecords: Record<string, { id: number }> = {};
   for (const task of tasksSeed) {
-    const opportunity = opportunityRecords[task.opportunity];
-    await prisma.task.create({
+    const opportunity = task.opportunity ? opportunityRecords[task.opportunity] : undefined;
+    const workflowRule = task.workflowRule ? workflowRuleRecords[task.workflowRule] : undefined;
+    const record = await prisma.task.create({
       data: {
         title: task.title,
         dueDate: new Date(task.dueDate),
         priority: task.priority as TaskPriority,
         status: task.status as TaskStatus,
         assignedTo: task.assignedTo,
-        opportunityId: opportunity?.id
+        opportunityId: opportunity?.id,
+        workflowRuleId: workflowRule?.id
       }
     });
+    taskRecords[task.title] = { id: record.id };
   }
 
   for (const invoice of invoicesSeed) {
@@ -210,6 +395,81 @@ async function main() {
     });
   }
 
+  for (const quote of quotesSeed) {
+    const account = accountRecords[quote.account];
+    if (!account) continue;
+    const opportunity = quote.opportunity ? opportunityRecords[quote.opportunity] : undefined;
+    await prisma.quote.upsert({
+      where: { number: quote.number },
+      update: {
+        status: quote.status as QuoteStatus,
+        total: quote.total,
+        currency: quote.currency,
+        issuedAt: new Date(quote.issuedAt),
+        expiresAt: quote.expiresAt ? new Date(quote.expiresAt) : null,
+        notes: quote.notes,
+        accountId: account.id,
+        opportunityId: opportunity?.id,
+        lines: {
+          deleteMany: {},
+          create: quote.lines.map((line) => ({
+            description: line.description,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            productId: line.product ? productRecords[line.product]?.id : undefined
+          }))
+        }
+      },
+      create: {
+        number: quote.number,
+        status: quote.status as QuoteStatus,
+        total: quote.total,
+        currency: quote.currency,
+        issuedAt: new Date(quote.issuedAt),
+        expiresAt: quote.expiresAt ? new Date(quote.expiresAt) : null,
+        notes: quote.notes,
+        accountId: account.id,
+        opportunityId: opportunity?.id,
+        lines: {
+          create: quote.lines.map((line) => ({
+            description: line.description,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            productId: line.product ? productRecords[line.product]?.id : undefined
+          }))
+        }
+      }
+    });
+  }
+
+  for (const contract of contractsSeed) {
+    const account = accountRecords[contract.account];
+    if (!account) continue;
+    const opportunity = contract.opportunity ? opportunityRecords[contract.opportunity] : undefined;
+    await prisma.contract.upsert({
+      where: { contractNumber: contract.contractNumber },
+      update: {
+        status: contract.status as ContractStatus,
+        startDate: new Date(contract.startDate),
+        endDate: contract.endDate ? new Date(contract.endDate) : null,
+        value: contract.value,
+        terms: contract.terms,
+        accountId: account.id,
+        opportunityId: opportunity?.id
+      },
+      create: {
+        contractNumber: contract.contractNumber,
+        status: contract.status as ContractStatus,
+        startDate: new Date(contract.startDate),
+        endDate: contract.endDate ? new Date(contract.endDate) : null,
+        value: contract.value,
+        terms: contract.terms,
+        accountId: account.id,
+        opportunityId: opportunity?.id
+      }
+    });
+  }
+
   for (const document of documentsSeed) {
     const opportunity = opportunityRecords[document.opportunity];
     await prisma.document.create({
@@ -220,6 +480,36 @@ async function main() {
         uploadedBy: document.uploadedBy,
         uploadedAt: new Date(document.uploadedAt),
         opportunityId: opportunity?.id
+      }
+    });
+  }
+
+  for (const insight of aiInsightsSeed) {
+    const opportunity = insight.opportunity ? opportunityRecords[insight.opportunity] : undefined;
+    const task = insight.task ? taskRecords[insight.task] : undefined;
+    await prisma.aiInsight.create({
+      data: {
+        type: insight.type as AIInsightType,
+        summary: insight.summary,
+        confidence: insight.confidence,
+        opportunityId: opportunity?.id,
+        taskId: task?.id
+      }
+    });
+  }
+
+  for (const notification of notificationsSeed) {
+    const account = notification.account ? accountRecords[notification.account] : undefined;
+    await prisma.notification.create({
+      data: {
+        type: notification.type as NotificationType,
+        status: notification.status as NotificationStatus,
+        title: notification.title,
+        body: notification.body,
+        recipient: notification.recipient,
+        link: notification.link,
+        accountId: account?.id,
+        readAt: notification.readAt ? new Date(notification.readAt) : null
       }
     });
   }

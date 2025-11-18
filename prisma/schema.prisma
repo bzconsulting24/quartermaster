@@ -49,6 +49,60 @@ enum InvoiceStatus {
   DRAFT
 }
 
+enum LeadStatus {
+  NEW
+  WORKING
+  NURTURING
+  QUALIFIED
+  DISQUALIFIED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum WorkflowTriggerType {
+  OPPORTUNITY_STAGE_CHANGED
+  TASK_OVERDUE
+  INACTIVITY
+}
+
+enum WorkflowActionType {
+  CREATE_TASK
+  SEND_EMAIL
+  CREATE_INVOICE
+  INVOKE_AI
+}
+
+enum AIInsightType {
+  SUMMARY
+  NEXT_STEP
+  RISK
+  EMAIL_DRAFT
+}
+
+enum NotificationType {
+  TASK
+  OPPORTUNITY
+  INVOICE
+  WORKFLOW
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
 model Account {
   id         Int           @id @default(autoincrement())
   name       String       @unique
@@ -67,6 +121,10 @@ model Account {
   opportunities  Opportunity[]
   invoices       Invoice[]
   tasks          Task[]
+  leads          Lead[]
+  quotes         Quote[]
+  contracts      Contract[]
+  notifications  Notification[]
 }
 
 model Contact {
@@ -108,6 +166,12 @@ model Opportunity {
   activities Activity[]
   tasks      Task[]
   documents  Document[]
+  quotes     Quote[]
+  contracts  Contract[]
+  insights   AIInsight[]
+
+  lead     Lead?    @relation("LeadOpportunity", fields: [leadId], references: [id])
+  leadId   Int?     @unique
 }
 
 model Activity {
@@ -150,6 +214,11 @@ model Task {
 
   opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
   opportunityId Int?
+
+  workflowRule   WorkflowRule? @relation(fields: [workflowRuleId], references: [id], onDelete: SetNull)
+  workflowRuleId Int?
+
+  insights AIInsight[]
 }
 
 model Invoice {
@@ -177,4 +246,162 @@ model InvoiceItem {
 
   invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   invoiceId String
+}
+
+model Lead {
+  id          Int        @id @default(autoincrement())
+  name        String
+  company     String?
+  email       String?
+  phone       String?
+  source      String?
+  status      LeadStatus @default(NEW)
+  owner       String?
+  score       Int?       @default(0)
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  accountId Int?
+
+  opportunity Opportunity? @relation("LeadOpportunity")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  sku         String?  @unique
+  description String?
+  unitPrice   Int
+  currency    String   @default("PHP")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  quoteLines QuoteLine[]
+}
+
+model Quote {
+  id         Int         @id @default(autoincrement())
+  number     String      @unique
+  status     QuoteStatus @default(DRAFT)
+  total      Int         @default(0)
+  currency   String      @default("PHP")
+  issuedAt   DateTime    @default(now())
+  expiresAt  DateTime?
+  notes      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId   Int
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  opportunityId Int?
+
+  lines QuoteLine[]
+}
+
+model QuoteLine {
+  id          Int      @id @default(autoincrement())
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Int
+  discount    Int      @default(0)
+
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  quoteId Int
+
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId Int?
+}
+
+model Contract {
+  id             Int            @id @default(autoincrement())
+  contractNumber String         @unique
+  status         ContractStatus @default(DRAFT)
+  startDate      DateTime
+  endDate        DateTime?
+  value          Int            @default(0)
+  terms          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId   Int
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  opportunityId Int?
+}
+
+model WorkflowRule {
+  id           Int                 @id @default(autoincrement())
+  name         String
+  description  String?
+  triggerType  WorkflowTriggerType
+  triggerConfig Json?
+  conditionConfig Json?
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  actions WorkflowAction[]
+  tasks   Task[]
+}
+
+model WorkflowAction {
+  id         Int                @id @default(autoincrement())
+  type       WorkflowActionType
+  actionConfig Json?
+  createdAt  DateTime           @default(now())
+
+  rule   WorkflowRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  ruleId Int
+}
+
+model AIInsight {
+  id          Int          @id @default(autoincrement())
+  type        AIInsightType
+  summary     String
+  confidence  Int?         @default(0)
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  opportunityId Int?
+
+  task   Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  taskId Int?
+}
+
+model Notification {
+  id          Int               @id @default(autoincrement())
+  type        NotificationType  @default(TASK)
+  status      NotificationStatus @default(UNREAD)
+  title       String
+  body        String
+  link        String?
+  recipient   String
+  createdAt   DateTime          @default(now())
+  readAt      DateTime?
+
+  account   Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  accountId Int?
+}
+
+model Team {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members UserTeam[]
+}
+
+model UserTeam {
+  id        Int      @id @default(autoincrement())
+  userEmail String
+  role      String?
+
+  team   Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId Int
 }
