@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { TrendingUp, Users, Briefcase, Calendar, CheckSquare, Lightbulb } from 'lucide-react';
 import { COLORS, formatCurrency, formatRelativeTime } from '../data/uiConstants';
+import Pomodoro from './Pomodoro';
 import type { Activity, AIInsight } from '../types';
 
 type OverviewMetrics = {
@@ -96,6 +97,7 @@ const HomeView = () => {
         <p style={{ fontSize: '16px', color: '#6B7280' }}>
           Here's what's happening with your sales today
         </p>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Pomodoro compact /></div>
       </div>
 
       <div style={{
@@ -369,3 +371,4 @@ const HomeView = () => {
 };
 
 export default HomeView;
+

@@ -16,6 +16,7 @@ import QuotesView from './components/QuotesView';
 import ContractsView from './components/ContractsView';
 import BZPipeline from './components/BZPipeline';
 import AssistantPanel from './components/AssistantPanel';
+import CommandPalette from './components/CommandPalette';
 import type { AppTab, Opportunity, StageId, UserSummary } from './types';
 
 type PipelineView = 'pipeline';
@@ -30,6 +31,8 @@ export default function App() {
   const [showAssistant, setShowAssistant] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState<boolean>(() => localStorage.getItem('focusMode') === '1');
 
   const currentUser: UserSummary = { name: 'Deo Umali', initials: 'DU' };
 
@@ -111,8 +114,8 @@ export default function App() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#F9FAFB' }}>
-      <BZHeader currentUser={currentUser} notifications={3} setShowNotifications={setShowNotifications} setShowAssistant={setShowAssistant} />
-      <NavigationTabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      <BZHeader currentUser={currentUser} notifications={3} setShowNotifications={setShowNotifications} setShowAssistant={setShowAssistant} onOpenCommand={() => setCommandOpen(true)} focusMode={focusMode} onToggleFocus={() => { const next = !focusMode; setFocusMode(next); localStorage.setItem('focusMode', next ? '1' : '0'); }} />
+      {!focusMode && (<NavigationTabs  />)}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {error && (
@@ -179,6 +182,9 @@ export default function App() {
         <NotificationsPanel onClose={() => setShowNotifications(false)} />
       )}
       {showAssistant && <AssistantPanel onClose={() => setShowAssistant(false)} />}
+      {commandOpen && (<CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={(t)=> setCurrentTab(t as any)} />)}
     </div>
   );
 }
+
+

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FileText, Filter } from 'lucide-react';
 import { COLORS, formatCurrency, formatDisplayDate } from '../data/uiConstants';
+import AIAssistModal from './AIAssistModal';
 import type { QuoteRecord, QuoteStatus } from '../types';
 
 const statuses: QuoteStatus[] = ['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED'];
@@ -9,6 +10,7 @@ const QuotesView = () => {
   const [quotes, setQuotes] = useState<QuoteRecord[]>([]);
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
     const loadQuotes = async () => {
@@ -177,3 +179,4 @@ const QuotesView = () => {
 };
 
 export default QuotesView;
+

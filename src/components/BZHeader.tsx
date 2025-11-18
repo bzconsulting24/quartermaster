@@ -7,9 +7,12 @@ type BZHeaderProps = {
   notifications: number;
   setShowNotifications: (show: boolean) => void;
   setShowAssistant: (show: boolean) => void;
+  onOpenCommand?: () => void;
+  focusMode?: boolean;
+  onToggleFocus?: () => void;
 };
 
-const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAssistant }: BZHeaderProps) => (
+const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAssistant, onOpenCommand, focusMode, onToggleFocus }: BZHeaderProps) => (
   <div style={{
     background: COLORS.navyDark,
     borderBottom: `1px solid ${COLORS.navyLight}`,
@@ -44,7 +47,9 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAss
         <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', width: '16px', height: '16px' }} />
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Type to search • Ctrl+K"
+          onFocus={() => onOpenCommand && onOpenCommand()}
+          onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); onOpenCommand && onOpenCommand(); } }}
           style={{
             width: '100%',
             padding: '8px 16px 8px 40px',
@@ -59,6 +64,8 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAss
     </div>
 
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <button onClick={() => onOpenCommand && onOpenCommand()} style={{ background: 'transparent', border: '1px solid #374151', color: '#E5E7EB', padding: '6px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Ctrl+K</button>
+      <button onClick={() => onToggleFocus && onToggleFocus()} style={{ background: focusMode ? '#10B981' : 'transparent', border: '1px solid #374151', color: focusMode ? '#06251c' : '#E5E7EB', padding: '6px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>{focusMode ? 'Focus: On' : 'Focus: Off'}</button>
       <button
         onClick={() => setShowNotifications(true)}
         style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', position: 'relative' }}

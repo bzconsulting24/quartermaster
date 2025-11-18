@@ -2,8 +2,9 @@
 
 ## Local development
 
-1. Copy `.env.example` to `.env` and update `DATABASE_URL` plus `REDIS_URL` for your PostgreSQL and Redis instances.
-2. Install dependencies and generate the Prisma client:
+1. Clone the repo into a directory without spaces in the path (for example `~/workspace/quartermaster`). `npm install` tends to fail on macOS when the path includes spaces such as `/Volumes/JPU-WORKSTATION 2TB/...`, so relocate the project before installing dependencies.
+2. Copy `.env.example` to `.env` and update `DATABASE_URL` plus `REDIS_URL` for your PostgreSQL and Redis instances.
+3. Install dependencies and generate the Prisma client:
    ```bash
    npm install
    npm run prisma:generate
@@ -51,3 +52,18 @@ docker build -f Dockerfile.dev -t quartermaster-dev:latest .
 ```
 
 This keeps the dev image up to date automatically on the same workstation.
+
+## Quality checks
+
+- `npm run lint` runs TypeScript in `--noEmit` mode against both the frontend (`tsconfig.json`) and backend (`tsconfig.server.json`) configs to catch type regressions quickly.
+
+## AI assistant & automation tips
+
+- Keep the automation worker (`npm run worker:automation`) running alongside the API. Workflow events trigger tasks, invoices, and insights asynchronously through BullMQ/Redis.
+- The in-app assistant (bot icon in the header) calls `/api/assistant`. You can test responses outside the UI via:
+  ```bash
+  curl -X POST http://localhost:4000/api/assistant \
+    -H "Content-Type: application/json" \
+    -d '{"prompt":"Summarize the pipeline"}'
+  ```
+- Subscribe to the SSE stream at `/api/events` if you are building integrations. Opportunity updates, workflow executions, and notification changes all emit events on this channel.

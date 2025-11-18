@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Filter, FileText, Eye, Download } from 'lucide-react';
 import { COLORS, formatCurrency, formatDisplayDate } from '../data/uiConstants';
+import AIAssistModal from './AIAssistModal';
 import type { InvoiceRecord } from '../types';
 
 type InvoiceStatusFilter = 'all' | 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE';
@@ -18,6 +19,7 @@ const InvoicesView = () => {
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
     const loadInvoices = async () => {
@@ -381,3 +383,4 @@ const InvoicesView = () => {
 };
 
 export default InvoicesView;
+
