@@ -118,7 +118,7 @@ const createInsightFromAction = async (
     (config?.insightType as AIInsightType) ??
     (action.type === WorkflowActionType.INVOKE_AI ? AIInsightType.NEXT_STEP : AIInsightType.SUMMARY);
 
-  await prisma.aiInsight.create({
+  await prisma.aIInsight.create({
     data: {
       type: insightType,
       summary,

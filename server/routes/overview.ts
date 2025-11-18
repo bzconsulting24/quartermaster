@@ -66,7 +66,7 @@ router.get(
           status: { not: 'COMPLETED' }
         }
       }),
-      prisma.aiInsight.count({
+      prisma.aIInsight.count({
         where: {
           type: 'RISK',
           createdAt: { gte: sevenDaysAgo }

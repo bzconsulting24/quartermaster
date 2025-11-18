@@ -185,7 +185,7 @@ async function main() {
   await prisma.userTeam.deleteMany();
   await prisma.team.deleteMany();
   await prisma.notification.deleteMany();
-  await prisma.aiInsight.deleteMany();
+  await prisma.aIInsight.deleteMany();
   await prisma.workflowAction.deleteMany();
   await prisma.workflowRule.deleteMany();
   await prisma.contract.deleteMany();
@@ -487,7 +487,7 @@ async function main() {
   for (const insight of aiInsightsSeed) {
     const opportunity = insight.opportunity ? opportunityRecords[insight.opportunity] : undefined;
     const task = insight.task ? taskRecords[insight.task] : undefined;
-    await prisma.aiInsight.create({
+    await prisma.aIInsight.create({
       data: {
         type: insight.type as AIInsightType,
         summary: insight.summary,
