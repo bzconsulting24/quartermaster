@@ -1,19 +1,62 @@
 version: '3.9'
 
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: quartermaster-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=quartermaster
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   quartermaster-dev:
     build:
       context: .
       dockerfile: Dockerfile.dev
     image: quartermaster-dev:latest
+    container_name: quartermaster-app
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - '5173:5173'
       - '4000:4000'
-    env_file:
-      - .env
     environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/quartermaster?schema=public
       - PORT=4000
+      - NODE_ENV=development
     volumes:
       - .:/app
       - /app/node_modules
     command: npm run dev:docker
+
+  prisma-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: quartermaster-dev:latest
+    container_name: quartermaster-prisma-studio
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '5556:5556'
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/quartermaster?schema=public
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npx prisma studio --port 5556 --browser none
+
+volumes:
+  postgres_data:

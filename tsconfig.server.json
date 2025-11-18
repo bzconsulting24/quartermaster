@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "outDir": "dist-server",
     "rootDir": "server",
     "strict": true,
@@ -11,8 +11,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "moduleDetection": "force"
+    "isolatedModules": true
   },
   "include": [
     "server/**/*.ts"
@@ -22,5 +21,9 @@
     "dist",
     "dist-server",
     "src"
-  ]
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
 }

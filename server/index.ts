@@ -4,11 +4,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
-import opportunitiesRouter from './routes/opportunities';
-import { errorHandler } from './middleware/errorHandler';
+import opportunitiesRouter from './routes/opportunities.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const clientDistPath = path.resolve(__dirname, '../dist');
 const hasClientBundle = fs.existsSync(clientDistPath);
 

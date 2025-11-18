@@ -9,7 +9,13 @@
       "Bash(npm run dev:*)",
       "Bash(docker stop:*)",
       "Bash(docker rm:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(if not exist .env copy .env.example .env)",
+      "Bash(test:*)",
+      "Bash(cp:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec:*)"
     ],
     "deny": [],
     "ask": []

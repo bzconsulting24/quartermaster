@@ -14,10 +14,10 @@ const stageLabelToEnum: Record<string, Stage> = {
 const accountsSeed = [
   { name: 'Acme Corporation', industry: 'Technology', type: 'Enterprise', revenue: 50_000_000, employees: 500, owner: 'Sarah Johnson', phone: '555-1000', website: 'acme.com', location: 'San Francisco, CA' },
   { name: 'TechStart Inc', industry: 'Software', type: 'SMB', revenue: 5_000_000, employees: 50, owner: 'Michael Chen', phone: '555-1001', website: 'techstart.io', location: 'Austin, TX' },
-  { name: 'BuildCo Ltd', industry: 'Construction', type: 'Mid-Market', revenue: 25_000_000, employees: 200, owner: 'Sarah Johnson', phone: '555-1002', website: 'buildco.com', location: 'Chicago, IL' },
+  { name: 'BuildCo Ltd', industry: 'Construction', type: 'MidMarket', revenue: 25_000_000, employees: 200, owner: 'Sarah Johnson', phone: '555-1002', website: 'buildco.com', location: 'Chicago, IL' },
   { name: 'DataFlow Inc', industry: 'Data Analytics', type: 'Enterprise', revenue: 100_000_000, employees: 800, owner: 'John Williams', phone: '555-1003', website: 'dataflow.com', location: 'New York, NY' },
   { name: 'CloudNine Corp', industry: 'Cloud Services', type: 'Enterprise', revenue: 75_000_000, employees: 600, owner: 'Sarah Johnson', phone: '555-1004', website: 'cloudnine.com', location: 'Seattle, WA' },
-  { name: 'RetailMax', industry: 'Retail', type: 'Mid-Market', revenue: 15_000_000, employees: 150, owner: 'Michael Chen', phone: '555-1005', website: 'retailmax.com', location: 'Los Angeles, CA' },
+  { name: 'RetailMax', industry: 'Retail', type: 'MidMarket', revenue: 15_000_000, employees: 150, owner: 'Michael Chen', phone: '555-1005', website: 'retailmax.com', location: 'Los Angeles, CA' },
   { name: 'FinanceHub', industry: 'Financial Services', type: 'Enterprise', revenue: 200_000_000, employees: 1200, owner: 'John Williams', phone: '555-1006', website: 'financehub.com', location: 'Boston, MA' }
 ];
 
