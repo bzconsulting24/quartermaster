@@ -1,5 +1,5 @@
 import type { UserSummary } from '../types';
-import { COLORS } from '../data/mockData';
+import { COLORS } from '../data/uiConstants';
 import { Search, Bell, HelpCircle, Settings } from 'lucide-react';
 
 type BZHeaderProps = {

@@ -6,40 +6,54 @@ export type StageId =
   | 'Closed Won'
   | 'Closed Lost';
 
-export interface Opportunity {
+export type AccountType = 'Enterprise' | 'MidMarket' | 'SMB';
+
+export interface AccountRecord {
   id: number;
   name: string;
-  account: string;
-  contact: string;
-  amount: number;
-  stage: StageId;
-  closeDate: string;
-  owner: string;
-  probability: number;
-  email: string;
-  phone: string;
+  industry?: string | null;
+  type: AccountType;
+  revenue?: number | null;
+  employees?: number | null;
+  owner?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  location?: string | null;
+  _count?: {
+    contacts: number;
+    opportunities: number;
+    invoices: number;
+  };
 }
 
-export interface OpportunityStage {
-  id: StageId;
+export interface ContactRecord {
+  id: number;
   name: string;
-  color: string;
+  title?: string | null;
+  email: string;
+  phone?: string | null;
+  owner?: string | null;
+  lastContact?: string | null;
+  account: AccountRecord;
 }
 
-export type ActivityType = 'email' | 'call' | 'task' | 'note' | 'meeting';
+export type ActivityType = 'EMAIL' | 'CALL' | 'TASK' | 'NOTE' | 'MEETING';
 
 export interface Activity {
   id: number;
   type: ActivityType;
-  user: string;
-  action: string;
   subject: string;
-  time: string;
-  description: string;
+  description?: string | null;
+  performedBy: string;
+  performedAt: string;
+  opportunity?: {
+    id: number;
+    name: string;
+  } | null;
 }
 
-export type TaskPriority = 'high' | 'medium' | 'low';
-export type TaskStatus = 'open' | 'overdue';
+export type TaskPriority = 'HIGH' | 'MEDIUM' | 'LOW';
+export type TaskStatus = 'OPEN' | 'OVERDUE' | 'COMPLETED';
 
 export interface Task {
   id: number;
@@ -48,46 +62,49 @@ export interface Task {
   priority: TaskPriority;
   status: TaskStatus;
   assignedTo: string;
+  opportunity?: {
+    id: number;
+    name: string;
+    account?: AccountRecord | null;
+  } | null;
 }
-
-export type DocumentType = 'proposal' | 'contract' | 'presentation';
 
 export interface DocumentRecord {
   id: number;
   name: string;
-  type: DocumentType;
+  type: string;
   size: string;
   uploadedBy: string;
   uploadedAt: string;
 }
 
-export interface AccountRecord {
+export interface Opportunity {
   id: number;
   name: string;
-  industry: string;
-  type: 'Enterprise' | 'Mid-Market' | 'SMB';
-  revenue: string;
-  employees: number;
+  amount: number;
+  stage: StageId;
+  closeDate: string;
   owner: string;
-  phone: string;
-  website: string;
-  location: string;
+  probability: number;
+  email?: string | null;
+  phone?: string | null;
+  account: AccountRecord;
+  contact?: ContactRecord | null;
+  activities?: Activity[];
+  tasks?: Task[];
+  documents?: DocumentRecord[];
 }
 
-export interface ContactRecord {
-  id: number;
+export interface OpportunityStage {
+  id: StageId;
   name: string;
-  title: string;
-  account: string;
-  email: string;
-  phone: string;
-  owner: string;
-  lastContact: string;
+  color: string;
 }
 
-export type InvoiceStatus = 'paid' | 'sent' | 'overdue' | 'draft';
+export type InvoiceStatus = 'PAID' | 'SENT' | 'OVERDUE' | 'DRAFT';
 
 export interface InvoiceItem {
+  id?: number;
   description: string;
   quantity: number;
   rate: number;
@@ -95,15 +112,14 @@ export interface InvoiceItem {
 
 export interface InvoiceRecord {
   id: string;
-  account: string;
-  contact: string;
+  account: AccountRecord;
   amount: number;
   status: InvoiceStatus;
   issueDate: string;
   dueDate: string;
   paidDate: string | null;
+  notes?: string | null;
   items: InvoiceItem[];
-  notes: string;
 }
 
 export interface UserSummary {

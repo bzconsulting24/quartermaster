@@ -1,13 +1,61 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { TrendingUp, Users, Briefcase, Calendar, CheckSquare } from 'lucide-react';
-import { COLORS, mockActivities } from '../data/mockData';
+import { COLORS, formatCurrency, formatRelativeTime } from '../data/uiConstants';
+import type { Activity } from '../types';
+
+type OverviewMetrics = {
+  totalRevenue: number;
+  activeDeals: number;
+  newContacts: number;
+  tasksDue: number;
+  wonThisMonth: number;
+};
+
+const defaultMetrics: OverviewMetrics = {
+  totalRevenue: 0,
+  activeDeals: 0,
+  newContacts: 0,
+  tasksDue: 0,
+  wonThisMonth: 0
+};
 
 const HomeView = () => {
+  const [metrics, setMetrics] = useState<OverviewMetrics>(defaultMetrics);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadOverview = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/overview');
+        if (!response.ok) {
+          throw new Error('Unable to load dashboard metrics');
+        }
+        const data = await response.json();
+        setMetrics({
+          totalRevenue: data.totalRevenue ?? 0,
+          activeDeals: data.activeDeals ?? 0,
+          newContacts: data.newContacts ?? 0,
+          tasksDue: data.tasksDue ?? 0,
+          wonThisMonth: data.wonThisMonth ?? 0
+        });
+        setActivities(data.activities ?? []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOverview();
+  }, []);
+
   const stats = [
-    { label: 'Total Revenue', value: '₱20.5M', change: '+15%', icon: TrendingUp, color: COLORS.gold },
-    { label: 'Active Deals', value: '24', change: '+3', icon: Briefcase, color: '#60A5FA' },
-    { label: 'New Contacts', value: '48', change: '+12', icon: Users, color: '#10B981' },
-    { label: 'Tasks Due', value: '8', change: '-2', icon: CheckSquare, color: '#F59E0B' },
+    { label: 'Total Revenue', value: formatCurrency(metrics.totalRevenue), subtext: `Won this month ${formatCurrency(metrics.wonThisMonth)}`, icon: TrendingUp, color: COLORS.gold },
+    { label: 'Active Deals', value: metrics.activeDeals.toString(), subtext: 'Open opportunities', icon: Briefcase, color: '#60A5FA' },
+    { label: 'New Contacts', value: metrics.newContacts.toString(), subtext: 'Touched in the last 7 days', icon: Users, color: '#10B981' },
+    { label: 'Tasks Due', value: metrics.tasksDue.toString(), subtext: 'Due or overdue', icon: CheckSquare, color: '#F59E0B' },
   ];
 
   return (
@@ -21,7 +69,6 @@ const HomeView = () => {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
@@ -57,14 +104,10 @@ const HomeView = () => {
                     {stat.label}
                   </div>
                   <div style={{ fontSize: '32px', fontWeight: 'bold', color: COLORS.navyDark, marginBottom: '4px' }}>
-                    {stat.value}
+                    {loading ? '—' : stat.value}
                   </div>
-                  <div style={{
-                    fontSize: '14px',
-                    color: stat.change.startsWith('+') ? '#10B981' : '#EF4444',
-                    fontWeight: '500'
-                  }}>
-                    {stat.change} from last week
+                  <div style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>
+                    {stat.subtext}
                   </div>
                 </div>
                 <div style={{
@@ -84,13 +127,11 @@ const HomeView = () => {
         })}
       </div>
 
-      {/* Two Column Layout */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '24px'
       }}>
-        {/* Recent Activity */}
         <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <div style={{
             display: 'flex',
@@ -108,7 +149,7 @@ const HomeView = () => {
             </a>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {mockActivities.map((activity) => (
+            {activities.map((activity) => (
               <div
                 key={activity.id}
                 style={{
@@ -123,12 +164,12 @@ const HomeView = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>
-                    {activity.user}
+                    {activity.performedBy}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{activity.time}</span>
+                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{formatRelativeTime(activity.performedAt)}</span>
                 </div>
                 <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '4px' }}>
-                  {activity.action}: <span style={{ fontWeight: '500' }}>{activity.subject}</span>
+                  {activity.type}: <span style={{ fontWeight: '500' }}>{activity.subject}</span>
                 </div>
                 <div style={{ fontSize: '13px', color: '#9CA3AF' }}>{activity.description}</div>
               </div>
@@ -136,9 +177,7 @@ const HomeView = () => {
           </div>
         </div>
 
-        {/* Quick Actions & Upcoming */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Quick Actions */}
           <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <h2 style={{
               fontSize: '20px',
@@ -192,7 +231,6 @@ const HomeView = () => {
             </div>
           </div>
 
-          {/* Upcoming Events */}
           <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
             <h2 style={{
               fontSize: '20px',
@@ -218,22 +256,16 @@ const HomeView = () => {
                     borderRadius: '6px',
                     display: 'flex',
                     gap: '12px',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    borderLeft: `4px solid ${COLORS.gold}`
                   }}
                 >
-                  <div style={{
-                    width: '4px',
-                    height: '40px',
-                    background: COLORS.gold,
-                    borderRadius: '2px'
-                  }} />
+                  <Calendar size={18} color={COLORS.navyDark} />
                   <div>
-                    <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '4px' }}>
-                      {event.time}
-                    </div>
-                    <div style={{ fontSize: '14px', fontWeight: '500', color: COLORS.navyDark }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>
                       {event.title}
                     </div>
+                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{event.time}</div>
                   </div>
                 </div>
               ))}

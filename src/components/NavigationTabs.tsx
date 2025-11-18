@@ -1,6 +1,6 @@
 import { Home, Briefcase, Users, CheckSquare, Calendar, BarChart3, Plus, FileText } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { COLORS } from '../data/mockData';
+import { COLORS } from '../data/uiConstants';
 import type { AppTab } from '../types';
 
 type TabConfig = {

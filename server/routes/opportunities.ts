@@ -1,29 +1,10 @@
-import { Router, type RequestHandler } from 'express';
+import { Router } from 'express';
 import prisma from '../prismaClient';
 import type { Stage } from '@prisma/client';
-
-const stageLabelToEnum: Record<string, Stage> = {
-  Prospecting: 'Prospecting',
-  Qualification: 'Qualification',
-  'Proposal/Price Quote': 'ProposalPriceQuote',
-  'Negotiation/Review': 'NegotiationReview',
-  'Closed Won': 'ClosedWon',
-  'Closed Lost': 'ClosedLost'
-};
-
-const stageEnumToLabel: Record<Stage, string> = Object.fromEntries(
-  Object.entries(stageLabelToEnum).map(([label, value]) => [value, label])
-) as Record<Stage, string>;
-
-const presentStage = (stage: Stage) => stageEnumToLabel[stage] ?? stage;
+import { asyncHandler } from './helpers.js';
+import { stageLabelToEnum, presentStage } from './stageLabels.js';
 
 const router = Router();
-
-const asyncHandler = (handler: RequestHandler): RequestHandler => {
-  return (req, res, next) => {
-    Promise.resolve(handler(req, res, next)).catch(next);
-  };
-};
 
 const normalizeStageInput = (incoming?: string | Stage): Stage | undefined => {
   if (!incoming) return undefined;
@@ -45,7 +26,9 @@ router.get(
       include: {
         account: true,
         contact: true,
-        activities: true
+        activities: true,
+        tasks: true,
+        documents: true
       },
       orderBy: { updatedAt: 'desc' }
     });
@@ -65,7 +48,8 @@ router.get(
         account: true,
         contact: true,
         activities: true,
-        tasks: true
+        tasks: true,
+        documents: true
       }
     });
 

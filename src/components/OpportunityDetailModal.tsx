@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Mail, Phone, Calendar, CheckSquare, Plus, Upload, Paperclip, Eye } from 'lucide-react';
-import { COLORS, mockActivities, mockDocuments, formatCurrency } from '../data/mockData';
+import { COLORS, formatCurrency, formatDisplayDate, formatRelativeTime } from '../data/uiConstants';
 import type { Opportunity, OpportunityModalTab } from '../types';
 
 type OpportunityDetailModalProps = {
@@ -51,7 +51,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
           <div>
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>{opportunity.name}</h2>
             <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
-              <span>{opportunity.account}</span>
+              <span>{opportunity.account?.name ?? 'Unassigned'}</span>
               <span>•</span>
               <span>{formatCurrency(opportunity.amount)}</span>
               <span>•</span>
@@ -97,7 +97,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                   </div>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Close Date</div>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{opportunity.closeDate}</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{formatDisplayDate(opportunity.closeDate)}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Stage</div>
@@ -113,24 +113,30 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                   </div>
                   <div>
                     <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '4px' }}>Account</div>
-                    <div style={{ fontSize: '16px', fontWeight: '600', color: COLORS.navyDark }}>{opportunity.account}</div>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: COLORS.navyDark }}>{opportunity.account?.name ?? 'Unassigned'}</div>
                   </div>
                 </div>
 
                 <h3 style={{ fontSize: '16px', fontWeight: '600', marginTop: '24px', marginBottom: '16px', color: COLORS.navyDark }}>Primary Contact</h3>
-                <div style={{ background: '#F9FAFB', padding: '16px', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>{opportunity.contact}</div>
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6B7280' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Mail size={14} />
-                      {opportunity.email}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Phone size={14} />
-                      {opportunity.phone}
+                {opportunity.contact ? (
+                  <div style={{ background: '#F9FAFB', padding: '16px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>{opportunity.contact.name}</div>
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6B7280' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Mail size={14} />
+                        {opportunity.contact.email}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Phone size={14} />
+                        {opportunity.contact.phone ?? '—'}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ background: '#F9FAFB', padding: '16px', borderRadius: '8px', color: '#6B7280' }}>
+                    No contact assigned to this opportunity yet.
+                  </div>
+                )}
               </div>
 
               <div>
@@ -229,7 +235,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                 </button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {mockActivities.map(activity => (
+                {(opportunity.activities ?? []).map(activity => (
                   <div key={activity.id} style={{
                     padding: '16px',
                     background: '#F9FAFB',
@@ -238,42 +244,48 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>
-                        {activity.user}
+                        {activity.performedBy}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{activity.time}</span>
+                      <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{formatRelativeTime(activity.performedAt)}</span>
                     </div>
                     <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '4px' }}>
-                      {activity.action}: <span style={{ fontWeight: '500' }}>{activity.subject}</span>
+                      {activity.type}: <span style={{ fontWeight: '500' }}>{activity.subject}</span>
                     </div>
                     <div style={{ fontSize: '13px', color: '#9CA3AF' }}>{activity.description}</div>
                   </div>
                 ))}
+                {(opportunity.activities ?? []).length === 0 && (
+                  <div style={{ color: '#6B7280', fontSize: '14px' }}>No activity logged yet.</div>
+                )}
               </div>
             </div>
           )}
 
           {activeTab === 'contacts' && (
             <div style={{ display: 'grid', gap: '16px' }}>
-              {[opportunity.contact].map((contact) => (
-                <div key={contact} style={{
+              {opportunity.contact ? (
+                <div style={{
                   padding: '16px',
                   background: '#F9FAFB',
                   borderRadius: '8px',
                   border: `1px solid ${COLORS.navyLight}`
                 }}>
-                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>{contact}</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>{opportunity.contact.name}</div>
+                  <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>{opportunity.contact.title}</div>
                   <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6B7280' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Mail size={14} />
-                      {opportunity.email}
+                      {opportunity.contact.email}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Phone size={14} />
-                      {opportunity.phone}
+                      {opportunity.contact.phone ?? '—'}
                     </div>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div style={{ color: '#6B7280', fontSize: '14px' }}>No contact linked to this opportunity.</div>
+              )}
             </div>
           )}
 
@@ -306,7 +318,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                 </button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {mockDocuments.map(doc => (
+                {(opportunity.documents ?? []).map(doc => (
                   <div key={doc.id} style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -319,7 +331,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                     <div>
                       <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>{doc.name}</div>
                       <div style={{ fontSize: '14px', color: '#6B7280' }}>
-                        {doc.type} • {doc.size} • Uploaded by {doc.uploadedBy} on {doc.uploadedAt}
+                        {doc.type} • {doc.size} • Uploaded by {doc.uploadedBy} on {formatDisplayDate(doc.uploadedAt)}
                       </div>
                     </div>
                     <button style={{
@@ -337,6 +349,9 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
                     </button>
                   </div>
                 ))}
+                {(opportunity.documents ?? []).length === 0 && (
+                  <div style={{ color: '#6B7280', fontSize: '14px' }}>No documents attached.</div>
+                )}
               </div>
             </div>
           )}

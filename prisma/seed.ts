@@ -60,6 +60,13 @@ const activitiesSeed = [
   { type: ActivityType.NOTE, subject: 'Budget confirmation', description: 'CFO confirmed budget approval for Q1', performedBy: 'John Williams', opportunity: 'DataFlow Implementation' }
 ];
 
+const documentsSeed = [
+  { name: 'Proposal_Acme_v2.pdf', type: 'proposal', size: '2.4 MB', uploadedBy: 'Sarah Johnson', uploadedAt: '2024-02-05', opportunity: 'Acme Corp - Enterprise' },
+  { name: 'Contract_TechStart.docx', type: 'contract', size: '1.1 MB', uploadedBy: 'Michael Chen', uploadedAt: '2024-02-03', opportunity: 'TechStart - SMB Package' },
+  { name: 'Product_Demo_Slides.pptx', type: 'presentation', size: '5.8 MB', uploadedBy: 'Sarah Johnson', uploadedAt: '2024-01-28', opportunity: 'BuildCo - Expansion' },
+  { name: 'Implementation_Playbook.pdf', type: 'proposal', size: '3.2 MB', uploadedBy: 'John Williams', uploadedAt: '2024-02-01', opportunity: 'DataFlow Implementation' }
+];
+
 async function main() {
   console.info('🌱 Seeding Quartermaster database...');
 
@@ -67,6 +74,7 @@ async function main() {
   await prisma.invoice.deleteMany();
   await prisma.task.deleteMany();
   await prisma.activity.deleteMany();
+  await prisma.document.deleteMany();
   await prisma.opportunity.deleteMany();
   await prisma.contact.deleteMany();
   await prisma.account.deleteMany();
@@ -198,6 +206,20 @@ async function main() {
         items: {
           create: invoice.items
         }
+      }
+    });
+  }
+
+  for (const document of documentsSeed) {
+    const opportunity = opportunityRecords[document.opportunity];
+    await prisma.document.create({
+      data: {
+        name: document.name,
+        type: document.type,
+        size: document.size,
+        uploadedBy: document.uploadedBy,
+        uploadedAt: new Date(document.uploadedAt),
+        opportunityId: opportunity?.id
       }
     });
   }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { DragEvent } from 'react';
 import BZHeader from './components/BZHeader';
 import NavigationTabs from './components/NavigationTabs';
@@ -12,7 +12,6 @@ import TasksView from './components/TasksView';
 import CalendarView from './components/CalendarView';
 import ReportsView from './components/ReportsView';
 import BZPipeline from './components/BZPipeline';
-import { COLORS, mockOpportunities } from './data/mockData';
 import type { AppTab, Opportunity, StageId, UserSummary } from './types';
 
 type PipelineView = 'pipeline';
@@ -20,12 +19,36 @@ type PipelineView = 'pipeline';
 export default function App() {
   const [currentTab, setCurrentTab] = useState<AppTab>('home');
   const [view, setView] = useState<PipelineView>('pipeline');
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(mockOpportunities);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [draggedItem, setDraggedItem] = useState<Opportunity | null>(null);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const currentUser: UserSummary = { name: 'Deo Umali', initials: 'DU' };
+
+  const loadOpportunities = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/opportunities');
+      if (!response.ok) {
+        throw new Error('Unable to load opportunities');
+      }
+      const data = (await response.json()) as Opportunity[];
+      setOpportunities(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unexpected error';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadOpportunities();
+  }, [loadOpportunities]);
 
   const handleDragStart = (_event: DragEvent<HTMLDivElement>, opportunity: Opportunity) => {
     setDraggedItem(opportunity);
@@ -35,14 +58,38 @@ export default function App() {
     event.preventDefault();
   };
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>, newStage: StageId) => {
+  const handleDrop = async (event: DragEvent<HTMLDivElement>, newStage: StageId) => {
     event.preventDefault();
-    if (draggedItem) {
-      setOpportunities(opportunities.map(opp =>
-        opp.id === draggedItem.id ? { ...opp, stage: newStage } : opp
-      ));
-      setDraggedItem(null);
+    if (!draggedItem) return;
+
+    try {
+      const response = await fetch(`/api/opportunities/${draggedItem.id}/stage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage })
+      });
+
+      if (!response.ok) {
+        throw new Error('Unable to update opportunity stage');
+      }
+
+      setOpportunities((prev) => {
+        const next = prev.map(opp =>
+          opp.id === draggedItem.id ? { ...opp, stage: newStage } : opp
+        );
+        setSelectedOpportunity((current) => {
+          if (!current || current.id !== draggedItem.id) {
+            return current;
+          }
+          return next.find(opp => opp.id === draggedItem.id) ?? current;
+        });
+        return next;
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to update stage';
+      setError(message);
     }
+    setDraggedItem(null);
   };
 
   return (
@@ -51,6 +98,11 @@ export default function App() {
       <NavigationTabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       <div style={{ flex: 1, overflow: 'auto' }}>
+        {error && (
+          <div style={{ background: '#FEF2F2', color: '#B91C1C', padding: '12px 16px', margin: '16px', borderRadius: '8px', border: '1px solid #FECACA' }}>
+            {error}
+          </div>
+        )}
         {currentTab === 'home' && <HomeView />}
 
         {currentTab === 'opportunities' && (
@@ -65,7 +117,7 @@ export default function App() {
                   borderRadius: '4px',
                   border: 'none',
                   cursor: 'pointer',
-                  background: view === 'pipeline' ? `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)` : 'white',
+                  background: view === 'pipeline' ? '#0A2540' : 'white',
                   color: view === 'pipeline' ? 'white' : '#6B7280',
                   boxShadow: view === 'pipeline' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
                 }}
@@ -74,13 +126,17 @@ export default function App() {
               </button>
             </div>
 
-            <BZPipeline
-              opportunities={opportunities}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onOpportunityClick={(opportunity) => setSelectedOpportunity(opportunity)}
-            />
+            {loading ? (
+              <div style={{ padding: '24px', color: '#6B7280' }}>Loading opportunities...</div>
+            ) : (
+              <BZPipeline
+                opportunities={opportunities}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onOpportunityClick={(opportunity) => setSelectedOpportunity(opportunity)}
+              />
+            )}
           </>
         )}
 

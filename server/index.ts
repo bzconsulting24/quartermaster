@@ -5,6 +5,13 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import opportunitiesRouter from './routes/opportunities.js';
+import accountsRouter from './routes/accounts.js';
+import contactsRouter from './routes/contacts.js';
+import tasksRouter from './routes/tasks.js';
+import invoicesRouter from './routes/invoices.js';
+import activitiesRouter from './routes/activities.js';
+import overviewRouter from './routes/overview.js';
+import reportsRouter from './routes/reports.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -21,6 +28,13 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/opportunities', opportunitiesRouter);
+app.use('/api/accounts', accountsRouter);
+app.use('/api/contacts', contactsRouter);
+app.use('/api/tasks', tasksRouter);
+app.use('/api/invoices', invoicesRouter);
+app.use('/api/activities', activitiesRouter);
+app.use('/api/overview', overviewRouter);
+app.use('/api/reports', reportsRouter);
 
 if (hasClientBundle) {
   app.use(express.static(clientDistPath));

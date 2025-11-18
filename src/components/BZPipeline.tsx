@@ -1,6 +1,6 @@
 import type { DragEvent } from 'react';
 import { MoreHorizontal } from 'lucide-react';
-import { COLORS, stages, formatCurrency } from '../data/mockData';
+import { COLORS, PIPELINE_STAGES, formatCurrency, formatDisplayDate } from '../data/uiConstants';
 import type { Opportunity, StageId } from '../types';
 
 type BZPipelineProps = {
@@ -23,7 +23,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
     </div>
 
     <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '16px' }}>
-      {stages.map((stage) => {
+      {PIPELINE_STAGES.map((stage) => {
         const stageOpps = opportunities.filter(o => o.stage === stage.id);
         const stageTotal = stageOpps.reduce((sum, o) => sum + o.amount, 0);
 
@@ -88,14 +88,14 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                   </div>
 
                   <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px' }}>
-                    {opp.account}
+                    {opp.account?.name ?? 'Unassigned'}
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontSize: '18px', fontWeight: 'bold', color: COLORS.navyDark }}>
                       {formatCurrency(opp.amount)}
                     </span>
-                    <span style={{ fontSize: '12px', color: '#6B7280' }}>{opp.closeDate}</span>
+                    <span style={{ fontSize: '12px', color: '#6B7280' }}>{formatDisplayDate(opp.closeDate)}</span>
                   </div>
 
                   <div style={{ paddingTop: '8px', borderTop: '1px solid #E5E7EB' }}>

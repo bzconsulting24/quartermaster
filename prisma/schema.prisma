@@ -107,6 +107,7 @@ model Opportunity {
 
   activities Activity[]
   tasks      Task[]
+  documents  Document[]
 }
 
 model Activity {
@@ -117,6 +118,18 @@ model Activity {
   performedBy   String
   performedAt   DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunityId Int?
+}
+
+model Document {
+  id          Int       @id @default(autoincrement())
+  name        String
+  type        String
+  size        String
+  uploadedBy  String
+  uploadedAt  DateTime  @default(now())
 
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   opportunityId Int?
