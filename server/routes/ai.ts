@@ -85,7 +85,7 @@ router.post(
   '/draft',
   asyncHandler(async (req, res) => {
     const body = req.body as DraftRequest;
-    const combined = ${body.notes ?? ''}\n.trim();
+    const combined = `${body.notes ?? ''}\n${body.pdfText ?? ''}`.trim();
     if (!combined) return res.status(400).json({ message: 'Provide notes or pdfText' });
 
     const ai = await draftWithOpenAI(body.kind, combined);
@@ -103,22 +103,22 @@ router.post(
   '/form-parse',
   asyncHandler(async (req, res) => {
     const { schema, text, pdfText } = req.body as { schema: Array<{ name: string; type?: string }>; text?: string; pdfText?: string };
-    const content = ${text ?? ''}\n.trim();
+    const content = `${text ?? ''}\n${pdfText ?? ''}`.trim();
     if (!schema || !Array.isArray(schema) || !content) return res.status(400).json({ message: 'schema and text/pdfText required' });
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       // Fallback: naive extraction by field name
       const out: Record<string, any> = {};
       for (const f of schema) {
-        const m = content.match(new RegExp(${f.name}[:\-\s]+(.{1,64}), 'i'));
+        const m = content.match(new RegExp(`${f.name}[:\\-\\s]+(.{1,64})`, 'i'));
         if (m) out[f.name] = m[1].trim();
       }
       return res.json({ data: out });
     }
-    const prompt = Extract JSON matching the given schema (keys must match exactly) from the content. Only return JSON.\nSchema keys: \nContent:\n;
+    const prompt = `Extract JSON matching the given schema (keys must match exactly) from the content. Only return JSON.\nSchema keys: ${schema.map(f => f.name).join(', ')}\nContent:\n${content}`;
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': Bearer  },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [

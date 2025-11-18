@@ -46,12 +46,13 @@ services:
         condition: service_healthy
     ports:
       - '4000:4000'
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/quartermaster?schema=public
       - REDIS_URL=redis://redis:6379
       - PORT=4000
       - NODE_ENV=development
-      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
       - ENABLE_WORKER_EVENTS=true
     volumes:
       - ./server:/app/server
