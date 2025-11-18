@@ -15,7 +15,8 @@
       "Bash(cp:*)",
       "Bash(docker-compose:*)",
       "Bash(docker logs:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
