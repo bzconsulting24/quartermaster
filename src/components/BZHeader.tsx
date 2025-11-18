@@ -1,8 +1,14 @@
-import React from 'react';
-import { Search, Bell, HelpCircle, Settings } from 'lucide-react';
+import type { UserSummary } from '../types';
 import { COLORS } from '../data/mockData';
+import { Search, Bell, HelpCircle, Settings } from 'lucide-react';
 
-const BZHeader = ({ currentUser, notifications, setShowNotifications }) => (
+type BZHeaderProps = {
+  currentUser: UserSummary;
+  notifications: number;
+  setShowNotifications: (show: boolean) => void;
+};
+
+const BZHeader = ({ currentUser, notifications, setShowNotifications }: BZHeaderProps) => (
   <div style={{
     background: COLORS.navyDark,
     borderBottom: `1px solid ${COLORS.navyLight}`,

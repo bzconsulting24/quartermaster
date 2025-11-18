@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type { DragEvent } from 'react';
 import BZHeader from './components/BZHeader';
 import NavigationTabs from './components/NavigationTabs';
 import OpportunityDetailModal from './components/OpportunityDetailModal';
@@ -12,27 +13,30 @@ import CalendarView from './components/CalendarView';
 import ReportsView from './components/ReportsView';
 import BZPipeline from './components/BZPipeline';
 import { COLORS, mockOpportunities } from './data/mockData';
+import type { AppTab, Opportunity, StageId, UserSummary } from './types';
+
+type PipelineView = 'pipeline';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState('home');
-  const [view, setView] = useState('pipeline');
-  const [opportunities, setOpportunities] = useState(mockOpportunities);
-  const [draggedItem, setDraggedItem] = useState(null);
-  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
+  const [currentTab, setCurrentTab] = useState<AppTab>('home');
+  const [view, setView] = useState<PipelineView>('pipeline');
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(mockOpportunities);
+  const [draggedItem, setDraggedItem] = useState<Opportunity | null>(null);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const currentUser = { name: 'Deo Umali', initials: 'DU' };
+  const currentUser: UserSummary = { name: 'Deo Umali', initials: 'DU' };
 
-  const handleDragStart = (e, opportunity) => {
+  const handleDragStart = (_event: DragEvent<HTMLDivElement>, opportunity: Opportunity) => {
     setDraggedItem(opportunity);
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
   };
 
-  const handleDrop = (e, newStage) => {
-    e.preventDefault();
+  const handleDrop = (event: DragEvent<HTMLDivElement>, newStage: StageId) => {
+    event.preventDefault();
     if (draggedItem) {
       setOpportunities(opportunities.map(opp =>
         opp.id === draggedItem.id ? { ...opp, stage: newStage } : opp
@@ -75,7 +79,7 @@ export default function App() {
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              onOpportunityClick={setSelectedOpportunity}
+              onOpportunityClick={(opportunity) => setSelectedOpportunity(opportunity)}
             />
           </>
         )}

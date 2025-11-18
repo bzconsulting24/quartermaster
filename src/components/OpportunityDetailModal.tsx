@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Mail, Phone, Calendar, CheckSquare, Plus, Upload, Paperclip, Eye } from 'lucide-react';
 import { COLORS, mockActivities, mockDocuments, formatCurrency } from '../data/mockData';
+import type { Opportunity, OpportunityModalTab } from '../types';
 
-const OpportunityDetailModal = ({ opportunity, onClose }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+type OpportunityDetailModalProps = {
+  opportunity: Opportunity | null;
+  onClose: () => void;
+};
+
+const tabs: OpportunityModalTab[] = ['overview', 'activity', 'contacts', 'documents'];
+
+const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModalProps) => {
+  const [activeTab, setActiveTab] = useState<OpportunityModalTab>('overview');
 
   if (!opportunity) return null;
 
@@ -56,7 +64,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }) => {
         </div>
 
         <div style={{ borderBottom: '1px solid #E5E7EB', background: 'white', display: 'flex', padding: '0 24px' }}>
-          {['overview', 'activity', 'contacts', 'documents'].map(tab => (
+          {tabs.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -201,121 +209,135 @@ const OpportunityDetailModal = ({ opportunity, onClose }) => {
                   background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  <Plus size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                  <Plus size={16} />
                   Log Activity
                 </button>
-              </div>
-              {mockActivities.map(activity => (
-                <div key={activity.id} style={{
-                  padding: '16px',
-                  background: '#F9FAFB',
-                  borderRadius: '8px',
-                  marginBottom: '12px',
-                  borderLeft: `4px solid ${COLORS.gold}`
+                <button style={{
+                  padding: '8px 16px',
+                  background: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>
-                      {activity.user} {activity.action}
+                  Filter
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {mockActivities.map(activity => (
+                  <div key={activity.id} style={{
+                    padding: '16px',
+                    background: '#F9FAFB',
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${COLORS.gold}`
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>
+                        {activity.user}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#9CA3AF' }}>{activity.time}</span>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{activity.time}</div>
+                    <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '4px' }}>
+                      {activity.action}: <span style={{ fontWeight: '500' }}>{activity.subject}</span>
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#9CA3AF' }}>{activity.description}</div>
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '4px' }}>{activity.subject}</div>
-                  <div style={{ fontSize: '14px', color: '#6B7280' }}>{activity.description}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
 
           {activeTab === 'contacts' && (
-            <div>
-              <div style={{ marginBottom: '16px' }}>
-                <button style={{
-                  padding: '8px 16px',
-                  background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
+            <div style={{ display: 'grid', gap: '16px' }}>
+              {[opportunity.contact].map((contact) => (
+                <div key={contact} style={{
+                  padding: '16px',
+                  background: '#F9FAFB',
+                  borderRadius: '8px',
+                  border: `1px solid ${COLORS.navyLight}`
                 }}>
-                  <Plus size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                  Add Contact
-                </button>
-              </div>
-              <div style={{ background: '#F9FAFB', padding: '20px', borderRadius: '8px' }}>
-                <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>{opportunity.contact}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px', color: '#6B7280' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={16} />
-                    <a href={`mailto:${opportunity.email}`} style={{ color: COLORS.navyDark }}>{opportunity.email}</a>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Phone size={16} />
-                    <a href={`tel:${opportunity.phone}`} style={{ color: COLORS.navyDark }}>{opportunity.phone}</a>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>{contact}</div>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#6B7280' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Mail size={14} />
+                      {opportunity.email}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Phone size={14} />
+                      {opportunity.phone}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
 
           {activeTab === 'documents' && (
             <div>
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
                 <button style={{
                   padding: '8px 16px',
                   background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  <Upload size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                  Upload Document
+                  <Upload size={16} />
+                  Upload
+                </button>
+                <button style={{
+                  padding: '8px 16px',
+                  background: 'white',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}>
+                  <Paperclip size={16} />
+                  Attach Existing
                 </button>
               </div>
-              {mockDocuments.map(doc => (
-                <div key={doc.id} style={{
-                  padding: '16px',
-                  background: '#F9FAFB',
-                  borderRadius: '8px',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Paperclip size={20} color={COLORS.navyDark} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {mockDocuments.map(doc => (
+                  <div key={doc.id} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '16px',
+                    background: '#F9FAFB',
+                    borderRadius: '8px',
+                    border: '1px solid #E5E7EB'
+                  }}>
                     <div>
-                      <div style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>{doc.name}</div>
-                      <div style={{ fontSize: '12px', color: '#6B7280' }}>
-                        {doc.size} • Uploaded by {doc.uploadedBy} • {doc.uploadedAt}
+                      <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>{doc.name}</div>
+                      <div style={{ fontSize: '14px', color: '#6B7280' }}>
+                        {doc.type} • {doc.size} • Uploaded by {doc.uploadedBy} on {doc.uploadedAt}
                       </div>
                     </div>
+                    <button style={{
+                      padding: '8px 16px',
+                      border: `1px solid ${COLORS.navyLight}`,
+                      borderRadius: '6px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Eye size={16} />
+                      View
+                    </button>
                   </div>
-                  <button style={{
-                    padding: '6px 12px',
-                    background: 'white',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '12px'
-                  }}>
-                    <Eye size={14} />
-                    View
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>

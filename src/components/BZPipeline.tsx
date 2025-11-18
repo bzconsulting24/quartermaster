@@ -1,8 +1,17 @@
-import React from 'react';
+import type { DragEvent } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { COLORS, stages, formatCurrency } from '../data/mockData';
+import type { Opportunity, StageId } from '../types';
 
-const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportunityClick }) => (
+type BZPipelineProps = {
+  opportunities: Opportunity[];
+  onDragStart: (event: DragEvent<HTMLDivElement>, opportunity: Opportunity) => void;
+  onDragOver: (event: DragEvent<HTMLDivElement>) => void;
+  onDrop: (event: DragEvent<HTMLDivElement>, newStage: StageId) => void;
+  onOpportunityClick: (opportunity: Opportunity) => void;
+};
+
+const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportunityClick }: BZPipelineProps) => (
   <div style={{ padding: '16px' }}>
     <div style={{ marginBottom: '16px' }}>
       <h2 style={{ fontSize: '18px', fontWeight: '600', color: COLORS.navyDark, marginBottom: '8px' }}>Sales Pipeline</h2>
@@ -40,7 +49,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
 
             <div
               onDragOver={onDragOver}
-              onDrop={(e) => onDrop(e, stage.id)}
+              onDrop={(event) => onDrop(event, stage.id)}
               style={{
                 background: '#F9FAFB',
                 border: `2px solid ${COLORS.navyDark}`,
@@ -54,7 +63,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                 <div
                   key={opp.id}
                   draggable
-                  onDragStart={(e) => onDragStart(e, opp)}
+                  onDragStart={(event) => onDragStart(event, opp)}
                   onClick={() => onOpportunityClick(opp)}
                   style={{
                     background: 'white',
@@ -66,8 +75,8 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.borderColor = COLORS.gold}
-                  onMouseLeave={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
+                  onMouseEnter={(event) => event.currentTarget.style.borderColor = COLORS.gold}
+                  onMouseLeave={(event) => event.currentTarget.style.borderColor = '#E5E7EB'}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                     <div style={{ color: COLORS.navyDark, fontSize: '14px', fontWeight: '600', flex: 1 }}>

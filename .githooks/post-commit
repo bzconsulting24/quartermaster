@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "⚠️  docker CLI not available, skipping dev image rebuild." >&2
+  exit 0
+fi
+
+echo "▶️  post-commit: rebuilding quartermaster-dev image..."
+docker build -f Dockerfile.dev -t quartermaster-dev:latest .

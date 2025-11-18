@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Stage {
+  Prospecting
+  Qualification
+  ProposalPriceQuote @map("Proposal/Price Quote")
+  NegotiationReview  @map("Negotiation/Review")
+  ClosedWon          @map("Closed Won")
+  ClosedLost         @map("Closed Lost")
+}
+
+enum AccountType {
+  Enterprise
+  MidMarket @map("Mid-Market")
+  SMB
+}
+
+enum TaskPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskStatus {
+  OPEN
+  OVERDUE
+  COMPLETED
+}
+
+enum ActivityType {
+  EMAIL
+  CALL
+  TASK
+  NOTE
+  MEETING
+}
+
+enum InvoiceStatus {
+  PAID
+  SENT
+  OVERDUE
+  DRAFT
+}
+
+model Account {
+  id         Int           @id @default(autoincrement())
+  name       String       @unique
+  industry   String?
+  type       AccountType   @default(Enterprise)
+  revenue    Int?
+  employees  Int?
+  owner      String?
+  phone      String?
+  website    String?
+  location   String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  contacts       Contact[]
+  opportunities  Opportunity[]
+  invoices       Invoice[]
+  tasks          Task[]
+}
+
+model Contact {
+  id         Int       @id @default(autoincrement())
+  name       String
+  title      String?
+  email      String       @unique
+  phone      String?
+  owner      String?
+  lastContact DateTime? @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int
+
+  opportunities Opportunity[]
+}
+
+model Opportunity {
+  id           Int       @id @default(autoincrement())
+  name         String     @unique
+  amount       Int
+  closeDate    DateTime
+  probability  Int       @default(0)
+  owner        String
+  stage        Stage     @default(Prospecting)
+  email        String?
+  phone        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int
+
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  contactId Int?
+
+  activities Activity[]
+  tasks      Task[]
+}
+
+model Activity {
+  id            Int          @id @default(autoincrement())
+  type          ActivityType
+  subject       String
+  description   String?
+  performedBy   String
+  performedAt   DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunityId Int?
+}
+
+model Task {
+  id            Int        @id @default(autoincrement())
+  title         String
+  dueDate       DateTime
+  priority      TaskPriority @default(MEDIUM)
+  status        TaskStatus   @default(OPEN)
+  assignedTo    String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  account   Account?    @relation(fields: [accountId], references: [id])
+  accountId Int?
+
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  opportunityId Int?
+}
+
+model Invoice {
+  id         String      @id
+  amount     Int
+  status     InvoiceStatus @default(DRAFT)
+  issueDate  DateTime
+  dueDate    DateTime
+  paidDate   DateTime?
+  notes      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int
+
+  items     InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          Int     @id @default(autoincrement())
+  description String
+  quantity    Int     @default(1)
+  rate        Int
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId String
+}

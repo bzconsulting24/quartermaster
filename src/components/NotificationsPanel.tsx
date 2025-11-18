@@ -1,8 +1,18 @@
-import React from 'react';
 import { X } from 'lucide-react';
 import { COLORS } from '../data/mockData';
 
-const NotificationsPanel = ({ onClose }) => (
+type NotificationsPanelProps = {
+  onClose: () => void;
+};
+
+const notifications = [
+  { type: 'task', message: 'Task "Follow up with Acme" is overdue', time: '10 min ago' },
+  { type: 'opportunity', message: 'Opportunity "DataFlow" moved to Negotiation', time: '1 hour ago' },
+  { type: 'meeting', message: 'Meeting with BuildCo starts in 30 minutes', time: '2 hours ago' },
+  { type: 'email', message: 'New email from john@acme.com', time: '3 hours ago' }
+] as const;
+
+const NotificationsPanel = ({ onClose }: NotificationsPanelProps) => (
   <div style={{
     position: 'fixed',
     top: 0,
@@ -30,12 +40,7 @@ const NotificationsPanel = ({ onClose }) => (
       </button>
     </div>
     <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-      {[
-        { type: 'task', message: 'Task \"Follow up with Acme\" is overdue', time: '10 min ago' },
-        { type: 'opportunity', message: 'Opportunity \"DataFlow\" moved to Negotiation', time: '1 hour ago' },
-        { type: 'meeting', message: 'Meeting with BuildCo starts in 30 minutes', time: '2 hours ago' },
-        { type: 'email', message: 'New email from john@acme.com', time: '3 hours ago' },
-      ].map((notif, idx) => (
+      {notifications.map((notif, idx) => (
         <div key={idx} style={{
           padding: '12px',
           background: '#F9FAFB',
