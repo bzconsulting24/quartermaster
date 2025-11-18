@@ -30,14 +30,19 @@ async function triggerRebuild() {
   try {
     console.log('Starting Docker rebuild...');
 
-    // Pull latest changes
-    await execAsync('git pull origin main');
-    console.log('Git pull completed');
+    // Note: We don't need git pull because volume mounts provide live updates
+    // The host system should pull the changes, and they'll be reflected in containers
 
-    // Rebuild and restart the containers
-    // Using --no-deps to rebuild only the app container, not dependencies like db
-    await execAsync('docker-compose -f docker-compose.dev.yml up -d --build --no-deps quartermaster-dev');
-    console.log('Docker rebuild completed');
+    // Rebuild and restart the frontend and backend containers
+    // Using --no-deps to rebuild only the app containers, not dependencies like db/redis
+    // Using --force-recreate to handle container conflicts
+    console.log('Rebuilding backend...');
+    await execAsync('docker-compose -f docker-compose.dev.yml up -d --build --no-deps --force-recreate backend');
+    console.log('Backend rebuild completed');
+
+    console.log('Rebuilding frontend...');
+    await execAsync('docker-compose -f docker-compose.dev.yml up -d --build --no-deps --force-recreate frontend');
+    console.log('Frontend rebuild completed');
 
     return { success: true, message: 'Rebuild triggered successfully' };
   } catch (error) {

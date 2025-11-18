@@ -21,6 +21,7 @@ import contractsRouter from './routes/contracts.js';
 import insightsRouter from './routes/insights.js';
 import notificationsRouter from './routes/notifications.js';
 import workflowRulesRouter from './routes/workflowRules.js';
+import assistantRouter from './routes/assistant.js';
 import webhookRouter from './routes/webhook.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -54,6 +55,7 @@ app.use('/api/contracts', contractsRouter);
 app.use('/api/insights', insightsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/workflow-rules', workflowRulesRouter);
+app.use('/api/assistant', assistantRouter);
 app.use('/api/webhook', webhookRouter);
 
 if (hasClientBundle) {

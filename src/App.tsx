@@ -11,7 +11,11 @@ import InvoicesView from './components/InvoicesView';
 import TasksView from './components/TasksView';
 import CalendarView from './components/CalendarView';
 import ReportsView from './components/ReportsView';
+import LeadsView from './components/LeadsView';
+import QuotesView from './components/QuotesView';
+import ContractsView from './components/ContractsView';
 import BZPipeline from './components/BZPipeline';
+import AssistantPanel from './components/AssistantPanel';
 import type { AppTab, Opportunity, StageId, UserSummary } from './types';
 
 type PipelineView = 'pipeline';
@@ -23,6 +27,7 @@ export default function App() {
   const [draggedItem, setDraggedItem] = useState<Opportunity | null>(null);
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +53,18 @@ export default function App() {
 
   useEffect(() => {
     loadOpportunities();
+  }, [loadOpportunities]);
+
+  useEffect(() => {
+    const source = new EventSource('/api/events');
+    const refresh = () => loadOpportunities();
+    source.addEventListener('opportunity.created', refresh);
+    source.addEventListener('opportunity.stageChanged', refresh);
+    return () => {
+      source.removeEventListener('opportunity.created', refresh);
+      source.removeEventListener('opportunity.stageChanged', refresh);
+      source.close();
+    };
   }, [loadOpportunities]);
 
   const handleDragStart = (_event: DragEvent<HTMLDivElement>, opportunity: Opportunity) => {
@@ -94,7 +111,7 @@ export default function App() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#F9FAFB' }}>
-      <BZHeader currentUser={currentUser} notifications={3} setShowNotifications={setShowNotifications} />
+      <BZHeader currentUser={currentUser} notifications={3} setShowNotifications={setShowNotifications} setShowAssistant={setShowAssistant} />
       <NavigationTabs currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       <div style={{ flex: 1, overflow: 'auto' }}>
@@ -143,6 +160,9 @@ export default function App() {
         {currentTab === 'accounts' && <AccountsView />}
         {currentTab === 'contacts' && <ContactsView />}
         {currentTab === 'invoices' && <InvoicesView />}
+        {currentTab === 'leads' && <LeadsView />}
+        {currentTab === 'quotes' && <QuotesView />}
+        {currentTab === 'contracts' && <ContractsView />}
         {currentTab === 'tasks' && <TasksView />}
         {currentTab === 'calendar' && <CalendarView />}
         {currentTab === 'reports' && <ReportsView />}
@@ -158,6 +178,7 @@ export default function App() {
       {showNotifications && (
         <NotificationsPanel onClose={() => setShowNotifications(false)} />
       )}
+      {showAssistant && <AssistantPanel onClose={() => setShowAssistant(false)} />}
     </div>
   );
 }

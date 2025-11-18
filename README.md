@@ -2,15 +2,17 @@
 
 ## Local development
 
-1. Copy `.env.example` to `.env` and update `DATABASE_URL` for your PostgreSQL instance.
+1. Copy `.env.example` to `.env` and update `DATABASE_URL` plus `REDIS_URL` for your PostgreSQL and Redis instances.
 2. Install dependencies and generate the Prisma client:
    ```bash
    npm install
    npm run prisma:generate
    ```
-3. Start both Vite and the Express API locally:
+3. Start both Vite and the Express API locally (API + worker):
    ```bash
-   npm run dev:docker
+   npm run server:dev    # Express API on port 4000
+   npm run worker:automation   # Automation worker consuming BullMQ jobs
+   npm run dev          # In a separate terminal, start Vite dev server
    ```
 
 ## Docker workflows

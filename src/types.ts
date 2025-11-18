@@ -62,6 +62,7 @@ export interface Task {
   priority: TaskPriority;
   status: TaskStatus;
   assignedTo: string;
+  workflowRuleId?: number | null;
   opportunity?: {
     id: number;
     name: string;
@@ -93,6 +94,7 @@ export interface Opportunity {
   activities?: Activity[];
   tasks?: Task[];
   documents?: DocumentRecord[];
+  insights?: AIInsight[];
 }
 
 export interface OpportunityStage {
@@ -127,6 +129,72 @@ export interface UserSummary {
   initials: string;
 }
 
+export type LeadStatus = 'NEW' | 'WORKING' | 'NURTURING' | 'QUALIFIED' | 'DISQUALIFIED';
+
+export interface LeadRecord {
+  id: number;
+  name: string;
+  company?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  source?: string | null;
+  status: LeadStatus;
+  owner?: string | null;
+  score?: number | null;
+  notes?: string | null;
+  updatedAt?: string;
+  account?: AccountRecord | null;
+  opportunity?: Opportunity | null;
+}
+
+export type QuoteStatus = 'DRAFT' | 'SENT' | 'ACCEPTED' | 'DECLINED';
+
+export interface QuoteLine {
+  id: number;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  productId?: number | null;
+}
+
+export interface QuoteRecord {
+  id: number;
+  number: string;
+  status: QuoteStatus;
+  total: number;
+  currency: string;
+  issuedAt: string;
+  expiresAt?: string | null;
+  notes?: string | null;
+  account: AccountRecord;
+  opportunity?: Opportunity | null;
+  lines: QuoteLine[];
+}
+
+export type ContractStatus = 'DRAFT' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+
+export interface ContractRecord {
+  id: number;
+  contractNumber: string;
+  status: ContractStatus;
+  startDate: string;
+  endDate?: string | null;
+  value: number;
+  terms?: string | null;
+  account: AccountRecord;
+  opportunity?: Opportunity | null;
+}
+
+export type AIInsightType = 'SUMMARY' | 'NEXT_STEP' | 'RISK' | 'EMAIL_DRAFT';
+
+export interface AIInsight {
+  id: number;
+  type: AIInsightType;
+  summary: string;
+  confidence?: number | null;
+  createdAt?: string;
+}
+
 export type AppTab =
   | 'home'
   | 'opportunities'
@@ -135,6 +203,9 @@ export type AppTab =
   | 'invoices'
   | 'tasks'
   | 'calendar'
-  | 'reports';
+  | 'reports'
+  | 'leads'
+  | 'quotes'
+  | 'contracts';
 
 export type OpportunityModalTab = 'overview' | 'activity' | 'contacts' | 'documents';

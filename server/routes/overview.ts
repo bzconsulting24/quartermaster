@@ -13,7 +13,16 @@ router.get(
 
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [invoiceAggregate, activeDeals, newContacts, tasksDue, activities] = await Promise.all([
+    const [
+      invoiceAggregate,
+      activeDeals,
+      newContacts,
+      tasksDue,
+      activities,
+      idleDeals,
+      automationTasks,
+      riskAlerts
+    ] = await Promise.all([
       prisma.invoice.aggregate({
         _sum: { amount: true },
         where: {
@@ -44,6 +53,24 @@ router.get(
             select: { id: true, name: true }
           }
         }
+      }),
+      prisma.opportunity.count({
+        where: {
+          stage: { notIn: ['ClosedWon', 'ClosedLost'] },
+          updatedAt: { lt: sevenDaysAgo }
+        }
+      }),
+      prisma.task.count({
+        where: {
+          workflowRuleId: { not: null },
+          status: { not: 'COMPLETED' }
+        }
+      }),
+      prisma.aiInsight.count({
+        where: {
+          type: 'RISK',
+          createdAt: { gte: sevenDaysAgo }
+        }
       })
     ]);
 
@@ -62,6 +89,9 @@ router.get(
       activeDeals,
       newContacts,
       tasksDue,
+      idleDeals,
+      automationTasks,
+      riskAlerts,
       wonThisMonth: wonThisMonth._sum.amount ?? 0,
       activities
     });

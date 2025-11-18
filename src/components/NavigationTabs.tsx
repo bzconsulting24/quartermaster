@@ -1,4 +1,16 @@
-import { Home, Briefcase, Users, CheckSquare, Calendar, BarChart3, Plus, FileText } from 'lucide-react';
+import {
+  Home,
+  Briefcase,
+  Users,
+  CheckSquare,
+  Calendar,
+  BarChart3,
+  Plus,
+  FileText,
+  UserPlus,
+  ScrollText,
+  FileSignature
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { COLORS } from '../data/uiConstants';
 import type { AppTab } from '../types';
@@ -19,7 +31,10 @@ const tabs: TabConfig[] = [
   { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
   { id: 'accounts', label: 'Accounts', icon: Users },
   { id: 'contacts', label: 'Contacts', icon: Users },
+  { id: 'leads', label: 'Leads', icon: UserPlus },
   { id: 'invoices', label: 'Invoices', icon: FileText },
+  { id: 'quotes', label: 'Quotes', icon: ScrollText },
+  { id: 'contracts', label: 'Contracts', icon: FileSignature },
   { id: 'tasks', label: 'Tasks', icon: CheckSquare },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
   { id: 'reports', label: 'Reports', icon: BarChart3 }

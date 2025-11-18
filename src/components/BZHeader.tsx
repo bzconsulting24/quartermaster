@@ -1,14 +1,15 @@
 import type { UserSummary } from '../types';
 import { COLORS } from '../data/uiConstants';
-import { Search, Bell, HelpCircle, Settings } from 'lucide-react';
+import { Search, Bell, Bot, Settings } from 'lucide-react';
 
 type BZHeaderProps = {
   currentUser: UserSummary;
   notifications: number;
   setShowNotifications: (show: boolean) => void;
+  setShowAssistant: (show: boolean) => void;
 };
 
-const BZHeader = ({ currentUser, notifications, setShowNotifications }: BZHeaderProps) => (
+const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAssistant }: BZHeaderProps) => (
   <div style={{
     background: COLORS.navyDark,
     borderBottom: `1px solid ${COLORS.navyLight}`,
@@ -81,8 +82,11 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications }: BZHeader
           }}>{notifications}</span>
         )}
       </button>
-      <button style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>
-        <HelpCircle size={20} color="white" />
+      <button
+        onClick={() => setShowAssistant(true)}
+        style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}
+      >
+        <Bot size={20} color="white" />
       </button>
       <button style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>
         <Settings size={20} color="white" />

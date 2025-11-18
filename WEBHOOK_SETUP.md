@@ -4,10 +4,11 @@ This guide explains how to set up automatic Docker container rebuilds when you p
 
 ## How It Works
 
-1. You push code to GitHub (main branch)
-2. GitHub sends a webhook notification to your server
-3. Your Express server receives the webhook
-4. The server pulls the latest code and triggers a Docker rebuild
+1. You push code to GitHub (main branch) - Your local system pulls the changes
+2. GitHub sends a webhook notification to your backend server
+3. Your Express backend receives the webhook
+4. The backend triggers Docker rebuilds of frontend and backend containers
+5. Volume mounts ensure the new code is immediately available
 
 ## Prerequisites
 
