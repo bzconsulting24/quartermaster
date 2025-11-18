@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import prisma from '../prismaClient';
 import { asyncHandler } from './helpers.js';
-import { presentStage } from './stageLabels.js';
+import { presentStage } from '../utils/stageUtils.js';
 
 const router = Router();
 

@@ -15,13 +15,16 @@
     "db:seed": "tsx prisma/seed.ts",
     "build:server": "tsc -p tsconfig.server.json",
     "start": "node dist-server/index.js",
-    "dev:server": "ts-node --project tsconfig.server.json server/index.ts"
+    "dev:server": "ts-node --project tsconfig.server.json server/index.ts",
+    "worker:automation": "tsx server/workers/automationWorker.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.16.1",
+    "bullmq": "^5.9.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
+    "ioredis": "^5.4.1",
     "lucide-react": "^0.356.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

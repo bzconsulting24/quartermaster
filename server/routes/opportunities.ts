@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import prisma from '../prismaClient';
 import type { Stage } from '@prisma/client';
+import { WorkflowTriggerType } from '@prisma/client';
 import { asyncHandler } from './helpers.js';
-import { stageLabelToEnum, presentStage } from './stageLabels.js';
+import { stageLabelToEnum, presentStage } from '../utils/stageUtils.js';
+import { enqueueWorkflowJob } from '../jobs/automationQueue.js';
 
 const router = Router();
 
@@ -113,9 +115,27 @@ router.patch(
       return res.status(400).json({ message: 'Invalid stage value' });
     }
 
+     const existing = await prisma.opportunity.findUnique({
+       where: { id },
+       select: { stage: true }
+     });
+
+     if (!existing) {
+       return res.status(404).json({ message: 'Opportunity not found' });
+     }
+
     const updated = await prisma.opportunity.update({
       where: { id },
       data: { stage: normalizedStage }
+    });
+
+    await enqueueWorkflowJob({
+      triggerType: WorkflowTriggerType.OPPORTUNITY_STAGE_CHANGED,
+      opportunityId: updated.id,
+      context: {
+        fromStage: presentStage(existing.stage),
+        toStage: presentStage(updated.stage)
+      }
     });
 
     res.json(serializeOpportunity(updated));
