@@ -286,18 +286,6 @@ const InvoicesView = () => {
       </div>
 
       {selectedInvoice && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-          <div style={{ width: 720, background: 'white', borderRadius: 8, padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.navyDark }}>Invoice Details</div>
-              <button onClick={() => setSelectedInvoice(null)} style={{ border: 'none', background: 'transparent', fontSize: '18px', cursor: 'pointer' }}>
-                ×
-              </button>
-            </div>
-            <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, margin: 0 }}>{JSON.stringify(selectedInvoice, null, 2)}</pre>
-          </div>
-        </div>
-      )}
         <div style={{
           position: 'fixed',
           inset: 0,

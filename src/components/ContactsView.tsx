@@ -54,7 +54,7 @@ const ContactsView = () => {
             {loading ? 'Loading...' : `${filteredContacts.length} contacts`}
           </p>
         </div>
-        <button onClick={async()=>{ const name=prompt('Contact name?'); const email=prompt('Contact email?'); const accountIdRaw=prompt('Account ID?'); const accountId=accountIdRaw?parseInt(accountIdRaw):null; if(!name||!email||!accountId){ alert('Name, email, accountId required'); return; } const r=await fetch('/api/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,accountId})}); if(r.ok){ location.reload(); } }} style={{ padding: '10px 20px', background: linear-gradient(135deg,  0%,  100%), color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}><Plus size={16} /> New Contact
+        <button onClick={async()=>{ const name=prompt('Contact name?'); const email=prompt('Contact email?'); const accountIdRaw=prompt('Account ID?'); const accountId=accountIdRaw?parseInt(accountIdRaw):null; if(!name||!email||!accountId){ alert('Name, email, accountId required'); return; } const r=await fetch('/api/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,accountId})}); if(r.ok){ location.reload(); } }} style={{ padding: '10px 20px', background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}><Plus size={16} /> New Contact
         </button>
       </div>
 
