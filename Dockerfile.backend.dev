@@ -1,0 +1,18 @@
+FROM node:18-alpine
+
+# Install dependencies for Prisma, Git, and Docker
+RUN apk add --no-cache openssl libc6-compat git docker-cli docker-cli-compose
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY . .
+
+RUN npx prisma generate
+
+ENV NODE_ENV=development
+EXPOSE 4000
+
+CMD ["npm", "run", "server:dev"]

@@ -5,6 +5,7 @@ import { WorkflowTriggerType } from '@prisma/client';
 import { asyncHandler } from './helpers.js';
 import { stageLabelToEnum, presentStage } from '../utils/stageUtils.js';
 import { enqueueWorkflowJob } from '../jobs/automationQueue.js';
+import { emitAppEvent } from '../events/eventBus.js';
 
 const router = Router();
 
@@ -100,6 +101,11 @@ router.post(
       }
     });
 
+    emitAppEvent({
+      type: 'opportunity.created',
+      payload: { id: newOpportunity.id, name: newOpportunity.name, stage: presentStage(newOpportunity.stage) }
+    });
+
     res.status(201).json(serializeOpportunity(newOpportunity));
   })
 );
@@ -127,6 +133,15 @@ router.patch(
     const updated = await prisma.opportunity.update({
       where: { id },
       data: { stage: normalizedStage }
+    });
+
+    emitAppEvent({
+      type: 'opportunity.stageChanged',
+      payload: {
+        id: updated.id,
+        fromStage: presentStage(existing.stage),
+        toStage: presentStage(updated.stage)
+      }
     });
 
     await enqueueWorkflowJob({

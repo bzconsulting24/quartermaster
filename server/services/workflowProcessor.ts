@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import prisma from '../prismaClient.js';
 import type { WorkflowJobData } from '../jobs/automationQueue.js';
+import { emitAppEvent } from '../events/eventBus.js';
 
 type OpportunityContext = Awaited<ReturnType<typeof loadOpportunity>>;
 
@@ -202,5 +203,14 @@ export const processWorkflowJob = async (jobData: WorkflowJobData) => {
     for (const action of rule.actions) {
       await executeAction(action, opportunity);
     }
+
+    emitAppEvent({
+      type: 'workflow.executed',
+      payload: {
+        ruleId: rule.id,
+        triggerType: jobData.triggerType,
+        opportunityId: opportunity?.id
+      }
+    });
   }
 };

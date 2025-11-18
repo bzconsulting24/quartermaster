@@ -33,19 +33,18 @@ services:
       timeout: 5s
       retries: 5
 
-  quartermaster-dev:
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    image: quartermaster-dev:latest
-    container_name: quartermaster-app
+      dockerfile: Dockerfile.backend.dev
+    image: quartermaster-backend:latest
+    container_name: quartermaster-backend
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     ports:
-      - '5173:5173'
       - '4000:4000'
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/quartermaster?schema=public
@@ -54,11 +53,34 @@ services:
       - NODE_ENV=development
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
     volumes:
-      - .:/app
+      - ./server:/app/server
+      - ./prisma:/app/prisma
+      - ./package.json:/app/package.json
+      - ./tsconfig.server.json:/app/tsconfig.server.json
       - /app/node_modules
       # Mount Docker socket for Windows Docker Desktop
       - //var/run/docker.sock:/var/run/docker.sock
-    command: npm run dev:docker
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend.dev
+    image: quartermaster-frontend:latest
+    container_name: quartermaster-frontend
+    depends_on:
+      - backend
+    ports:
+      - '5173:5173'
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://backend:4000
+    volumes:
+      - ./src:/app/src
+      - ./index.html:/app/index.html
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
 
   prisma-studio:
     build:
