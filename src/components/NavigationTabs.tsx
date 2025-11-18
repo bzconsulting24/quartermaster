@@ -33,7 +33,7 @@ const tabs: TabConfig[] = [
   { id: 'contacts', label: 'Contacts', icon: Users },
   { id: 'leads', label: 'Leads', icon: UserPlus },
   { id: 'invoices', label: 'Invoices', icon: FileText },
-  { id: 'quotes', label: 'Quotes', icon: ScrollText },
+  { id: 'estimates', label: 'Estimates', icon: ScrollText },
   { id: 'contracts', label: 'Contracts', icon: FileSignature },
   { id: 'tasks', label: 'Tasks', icon: CheckSquare },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
@@ -94,3 +94,4 @@ const NavigationTabs = ({ currentTab, setCurrentTab }: NavigationTabsProps) => (
 );
 
 export default NavigationTabs;
+

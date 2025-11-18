@@ -164,7 +164,7 @@ export default function App() {
         {currentTab === 'contacts' && <ContactsView />}
         {currentTab === 'invoices' && <InvoicesView />}
         {currentTab === 'leads' && <LeadsView />}
-        {currentTab === 'quotes' && <QuotesView />}
+        {currentTab === 'estimates' && <QuotesView />}
         {currentTab === 'contracts' && <ContractsView />}
         {currentTab === 'tasks' && <TasksView />}
         {currentTab === 'calendar' && <CalendarView />}
@@ -186,5 +186,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Filter, PlusCircle, Mail, PhoneCall, Star } from 'lucide-react';
 import { COLORS, formatDisplayDate } from '../data/uiConstants';
+import LeadEditModal from './LeadEditModal';
 import type { LeadRecord, LeadStatus } from '../types';
 
 const statuses: LeadStatus[] = ['NEW', 'WORKING', 'NURTURING', 'QUALIFIED', 'DISQUALIFIED'];
@@ -10,6 +11,7 @@ const LeadsView = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState<null | LeadRecord>(null);
 
   useEffect(() => {
     const loadLeads = async () => {
@@ -211,3 +213,4 @@ const LeadsView = () => {
 };
 
 export default LeadsView;
+

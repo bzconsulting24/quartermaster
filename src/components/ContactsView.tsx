@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Mail, Phone, Building2, User } from 'lucide-react';
 import { COLORS, formatDisplayDate } from '../data/uiConstants';
+import ContactEditModal from './ContactEditModal';
 import type { ContactRecord } from '../types';
 
 const ContactsView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [contacts, setContacts] = useState<ContactRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState<null | ContactRecord>(null);
 
   useEffect(() => {
     const loadContacts = async () => {
@@ -113,7 +115,7 @@ const ContactsView = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
             <thead>
               <tr style={{ background: '#F9FAFB', borderBottom: `2px solid ${COLORS.gold}` }}>
-                {['Contact Name', 'Title', 'Account', 'Contact Info', 'Last Contact', 'Owner'].map((header) => (
+                {['Contact Name', 'Title', 'Account', 'Contact Info', 'Last Contact', 'Owner', 'Actions'].map((header) => (
                   <th key={header} style={{
                     padding: '16px',
                     textAlign: 'left',
@@ -222,3 +224,4 @@ const ContactsView = () => {
 };
 
 export default ContactsView;
+

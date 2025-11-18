@@ -36,7 +36,7 @@ export default function AIAssistModal({ kind, onClose, onCreated }: { kind: 'quo
     if (kind === 'quote') {
       const number = 'Q-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random()*9000);
       const lines = draft.lines.map(l => ({ description: l.description, quantity: l.quantity, unitPrice: l.unitPrice }));
-      const res = await fetch('/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number, accountId: Number(accountId), total: Math.round(draft.subtotal), lines }) });
+      const res = await fetch('/api/estimates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number, accountId: Number(accountId), total: Math.round(draft.subtotal), lines }) });
       if (!res.ok) throw new Error('Failed to create quote');
     } else {
       const id = 'INV-' + Math.floor(1000 + Math.random()*9000);
@@ -51,7 +51,7 @@ export default function AIAssistModal({ kind, onClose, onCreated }: { kind: 'quo
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60 }} onClick={onClose}>
       <div onClick={(e)=> e.stopPropagation()} style={{ maxWidth: 720, margin: '10vh auto', background: 'white', borderRadius: 8, padding: 16, border: '1px solid #E5E7EB' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.navyDark }}>AI Draft {kind === 'quote' ? 'Estimate' : 'Invoice'}</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.navyDark }}>AI Draft </h2>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
@@ -70,7 +70,7 @@ export default function AIAssistModal({ kind, onClose, onCreated }: { kind: 'quo
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <button onClick={runDraft} disabled={loading} style={{ padding: '8px 12px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>{loading ? 'Generating…' : 'Generate Draft'}</button>
-          <button onClick={create} disabled={!draft || !accountId} style={{ padding: '8px 12px', background: '#10B981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Create {kind === 'quote' ? 'Quote' : 'Invoice'}</button>
+          <button onClick={create} disabled={!draft || !accountId} style={{ padding: '8px 12px', background: '#10B981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Create </button>
         </div>
         {error && <div style={{ marginTop: 8, color: '#B91C1C' }}>{error}</div>}
         {draft && (
@@ -106,3 +106,6 @@ export default function AIAssistModal({ kind, onClose, onCreated }: { kind: 'quo
     </div>
   );
 }
+
+
+

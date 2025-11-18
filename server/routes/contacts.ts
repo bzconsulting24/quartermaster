@@ -19,3 +19,14 @@ router.get(
 );
 
 export default router;
+
+
+router.patch(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const contact = await prisma.contact.update({ where: { id }, data: req.body });
+    res.json(contact);
+  })
+);
+

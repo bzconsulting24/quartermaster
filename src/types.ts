@@ -205,7 +205,9 @@ export type AppTab =
   | 'calendar'
   | 'reports'
   | 'leads'
-  | 'quotes'
+  | 'estimates'
   | 'contracts';
 
 export type OpportunityModalTab = 'overview' | 'activity' | 'contacts' | 'documents';
+
+

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Filter, Building2, Mail } from 'lucide-react';
 import { COLORS, formatAccountType, formatCurrency } from '../data/uiConstants';
 import type { AccountRecord } from '../types';
+import AccountEditModal from './AccountEditModal';
 
 const AccountsView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'Enterprise' | 'Mid-Market' | 'SMB'>('all');
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState<null | AccountRecord>(null);
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -139,7 +141,7 @@ const AccountsView = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
             <thead>
               <tr style={{ background: '#F9FAFB', borderBottom: `2px solid ${COLORS.gold}` }}>
-                {['Account Name', 'Industry', 'Type', 'Revenue', 'Location', 'Account Owner'].map((header) => (
+                {['Account Name', 'Industry', 'Type', 'Revenue', 'Location', 'Account Owner', 'Actions'].map((header) => (
                   <th key={header} style={{
                     padding: '16px',
                     textAlign: 'left',
@@ -211,12 +213,27 @@ const AccountsView = () => {
                       {account.owner ?? 'Unassigned'}
                     </div>
                   </td>
+                  <td style={{ padding: '16px' }}>
+                    <button
+                      onClick={() => setShowEdit(account)}
+                      style={{ padding: '6px 10px', background: '#6B7280', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      {showEdit && (
+        <AccountEditModal
+          account={showEdit}
+          onClose={() => setShowEdit(null)}
+          onSaved={(a) => setAccounts((prev) => prev.map((x) => (x.id === a.id ? a : x)))}
+        />
+      )}
     </div>
   );
 };

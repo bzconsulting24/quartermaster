@@ -163,3 +163,4 @@ export default function CommandPalette({ open, onClose, onNavigate, onCreateTask
     </div>
   );
 }
+

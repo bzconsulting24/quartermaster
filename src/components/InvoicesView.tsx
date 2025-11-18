@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Filter, FileText, Eye, Download } from 'lucide-react';
 import { COLORS, formatCurrency, formatDisplayDate } from '../data/uiConstants';
 import AIAssistModal from './AIAssistModal';
+import InvoiceCreateModal from './InvoiceCreateModal';
+import InvoiceEditModal from './InvoiceEditModal';
 import type { InvoiceRecord } from '../types';
 
 type InvoiceStatusFilter = 'all' | 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE';
@@ -18,7 +20,9 @@ const InvoicesView = () => {
   const [filterStatus, setFilterStatus] = useState<InvoiceStatusFilter>('all');
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(null);
+  const [editInvoice, setEditInvoice] = useState<InvoiceRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
 
   useEffect(() => {
@@ -88,8 +92,7 @@ const InvoicesView = () => {
           boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
           <Plus size={16} />
-          New Invoice
-        </button>
+          New Invoice</button>\r\n        {showCreate && (<InvoiceCreateModal onClose={()=> setShowCreate(false)} onCreated={()=> window.location.reload()} />)}
       </div>
 
       <div style={{
@@ -266,8 +269,7 @@ const InvoicesView = () => {
                           }}
                         >
                           <Eye size={14} />
-                          View
-                        </button>
+                          View</button>\r\n                        <button onClick={()=> setEditInvoice(invoice)} style={{ border: '1px solid #E5E7EB', borderRadius: '6px', padding: '6px 12px', background: 'white', cursor: 'pointer' }}>Edit</button>
                         <button style={{
                           border: '1px solid #E5E7EB',
                           borderRadius: '6px',
@@ -383,4 +385,6 @@ const InvoicesView = () => {
 };
 
 export default InvoicesView;
+
+
 

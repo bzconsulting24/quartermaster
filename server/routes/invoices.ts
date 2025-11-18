@@ -62,3 +62,22 @@ router.post(
     res.status(201).json(invoice);
   })
 );
+
+
+router.patch(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id);
+    const { items, ...rest } = req.body as any;
+    const invoice = await prisma.invoice.update({
+      where: { id },
+      data: {
+        ...rest,
+        items: items ? { deleteMany: {}, create: items.map((it: any) => ({ description: it.description, quantity: it.quantity ?? 1, rate: it.rate })) } : undefined
+      },
+      include: { items: true }
+    });
+    res.json(invoice);
+  })
+);
+

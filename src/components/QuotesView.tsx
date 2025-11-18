@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileText, Filter } from 'lucide-react';
+import { FileText, Filter, Send, Repeat } from 'lucide-react';
 import { COLORS, formatCurrency, formatDisplayDate } from '../data/uiConstants';
 import AIAssistModal from './AIAssistModal';
+import EstimateDetailModal from './EstimateDetailModal';
 import type { QuoteRecord, QuoteStatus } from '../types';
 
 const statuses: QuoteStatus[] = ['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED'];
@@ -11,30 +12,26 @@ const QuotesView = () => {
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  useEffect(() => {
-    const loadQuotes = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/quotes');
-        if (!response.ok) {
-          throw new Error('Unable to load quotes');
-        }
-        const data = await response.json();
-        setQuotes(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const load = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/estimates');
+      if (!response.ok) throw new Error('Unable to load estimates');
+      const data = await response.json();
+      setQuotes(data);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadQuotes();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
-  const filteredQuotes = useMemo(() => {
-    return quotes.filter(quote => (statusFilter === 'all' ? true : quote.status === statusFilter));
-  }, [quotes, statusFilter]);
+  const filteredQuotes = useMemo(
+    () => quotes.filter(q => (statusFilter === 'all' ? true : q.status === statusFilter)),
+    [quotes, statusFilter]
+  );
 
   const totals = useMemo(() => {
     const draft = filteredQuotes.filter(q => q.status === 'DRAFT').reduce((sum, q) => sum + q.total, 0);
@@ -43,16 +40,32 @@ const QuotesView = () => {
     return { draft, sent, accepted };
   }, [filteredQuotes]);
 
+  const sendEstimate = async (id: number) => {
+    const to = window.prompt('Send estimate to email (leave blank to skip email):') || undefined;
+    await fetch('/api/estimates/' + id + '/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to })
+    });
+    await load();
+  };
+
+  const convertToInvoice = async (id: number) => {
+    const res = await fetch('/api/estimates/' + id + '/convert-to-invoice', { method: 'POST' });
+    if (res.ok) await load();
+  };
+
   return (
     <div style={{ padding: '24px', minHeight: '100%', background: '#F9FAFB' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark }}>Quotes</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark }}>Estimates</h1>
           <p style={{ fontSize: '14px', color: '#6B7280' }}>
-            {loading ? 'Loading...' : `${filteredQuotes.length} quotes`}
+            {loading ? 'Loading...' : (filteredQuotes.length + ' estimates')}
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button onClick={() => setShowAIModal(true)} style={{ padding: '10px 12px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>AI Draft</button>
           <Filter size={18} color="#6B7280" />
           <select
             value={statusFilter}
@@ -108,10 +121,10 @@ const QuotesView = () => {
         }}
       >
         <div className="table-responsive">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '960px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1024px' }}>
             <thead>
-              <tr style={{ background: '#F9FAFB', borderBottom: `2px solid ${COLORS.gold}` }}>
-                {['Quote #', 'Account', 'Status', 'Issued', 'Expires', 'Total', 'Opportunity'].map(header => (
+              <tr style={{ background: '#F9FAFB', borderBottom: '2px solid ' + COLORS.gold }}>
+                {['Estimate #', 'Account', 'Status', 'Issued', 'Expires', 'Total', 'Opportunity', 'Actions'].map(header => (
                   <th
                     key={header}
                     style={{
@@ -132,14 +145,14 @@ const QuotesView = () => {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={7} style={{ padding: '16px', textAlign: 'center', color: '#6B7280' }}>
-                    Loading quotes...
+                  <td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: '#6B7280' }}>
+                    Loading estimates...
                   </td>
                 </tr>
               )}
               {!loading &&
                 filteredQuotes.map(quote => (
-                  <tr key={quote.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                  <tr key={quote.id} onClick={() => setSelectedId(quote.id)} style={{ borderBottom: '1px solid #E5E7EB', cursor: 'pointer' }}>
                     <td style={{ padding: '16px', fontWeight: 600, color: COLORS.navyDark }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FileText size={16} color={COLORS.navyDark} />
@@ -162,21 +175,36 @@ const QuotesView = () => {
                     </td>
                     <td style={{ padding: '16px', color: '#6B7280' }}>{formatDisplayDate(quote.issuedAt)}</td>
                     <td style={{ padding: '16px', color: '#6B7280' }}>
-                      {quote.expiresAt ? formatDisplayDate(quote.expiresAt) : '—'}
+                      {quote.expiresAt ? formatDisplayDate(quote.expiresAt) : '-'}
                     </td>
                     <td style={{ padding: '16px', fontWeight: 600, color: COLORS.navyDark }}>
                       {formatCurrency(quote.total)}
                     </td>
-                    <td style={{ padding: '16px', color: '#6B7280' }}>{quote.opportunity?.name ?? '—'}</td>
+                    <td style={{ padding: '16px', color: '#6B7280' }}>{quote.opportunity?.name ?? '-'}</td>
+                    <td style={{ padding: '16px' }} onClick={(e) => e.stopPropagation()}>
+                      <button title="Send Estimate" onClick={() => void sendEstimate(quote.id)} style={{ marginRight: 8, padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}>
+                        <Send size={14} style={{ verticalAlign: 'middle' }} />
+                      </button>
+                      <button title="Convert to Invoice" onClick={() => void convertToInvoice(quote.id)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}>
+                        <Repeat size={14} style={{ verticalAlign: 'middle' }} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {showAIModal && (
+        <AIAssistModal kind='quote' onClose={() => setShowAIModal(false)} onCreated={() => { setShowAIModal(false); void load(); }} />
+      )}
+
+      {selectedId !== null && (
+        <EstimateDetailModal id={selectedId} onClose={() => setSelectedId(null)} onChanged={() => void load()} />
+      )}
     </div>
   );
 };
 
 export default QuotesView;
-
