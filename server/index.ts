@@ -12,6 +12,7 @@ import invoicesRouter from './routes/invoices.js';
 import activitiesRouter from './routes/activities.js';
 import overviewRouter from './routes/overview.js';
 import reportsRouter from './routes/reports.js';
+import webhookRouter from './routes/webhook.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/invoices', invoicesRouter);
 app.use('/api/activities', activitiesRouter);
 app.use('/api/overview', overviewRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/webhook', webhookRouter);
 
 if (hasClientBundle) {
   app.use(express.static(clientDistPath));

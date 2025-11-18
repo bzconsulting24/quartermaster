@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl libc6-compat
+# Install dependencies for Prisma, Git, and Docker
+RUN apk add --no-cache openssl libc6-compat git docker-cli docker-cli-compose
 
 WORKDIR /app
 

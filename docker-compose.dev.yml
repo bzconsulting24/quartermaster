@@ -35,9 +35,12 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/quartermaster?schema=public
       - PORT=4000
       - NODE_ENV=development
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-}
     volumes:
       - .:/app
       - /app/node_modules
+      # Mount Docker socket for Windows Docker Desktop
+      - //var/run/docker.sock:/var/run/docker.sock
     command: npm run dev:docker
 
   prisma-studio:
