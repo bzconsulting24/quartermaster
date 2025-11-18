@@ -24,27 +24,29 @@ function verifyGitHubSignature(payload: string, signature: string): boolean {
 }
 
 /**
- * Trigger Docker rebuild
+ * Trigger Docker rebuild from GitHub
+ * This runs on the HOST machine, not inside Docker
  */
 async function triggerRebuild() {
   try {
-    console.log('Starting Docker rebuild...');
+    console.log('Starting Docker rebuild from GitHub...');
 
-    // Note: We don't need git pull because volume mounts provide live updates
-    // The host system should pull the changes, and they'll be reflected in containers
+    // Execute on HOST machine via docker exec to quartermaster-backend
+    // This allows us to run git pull and docker-compose on the host
+    const rebuildScript = `
+      cd /app && \
+      echo "Pulling latest changes from GitHub..." && \
+      git fetch origin main && \
+      git reset --hard origin/main && \
+      echo "Rebuilding frontend and backend containers..." && \
+      docker-compose -f docker-compose.dev.yml up -d --build --no-deps --force-recreate backend frontend && \
+      echo "Rebuild completed successfully"
+    `;
 
-    // Rebuild and restart the frontend and backend containers
-    // Using --no-deps to rebuild only the app containers, not dependencies like db/redis
-    // Using --force-recreate to handle container conflicts
-    console.log('Rebuilding backend...');
-    await execAsync('docker-compose -f docker-compose.dev.yml up -d --build --no-deps --force-recreate backend');
-    console.log('Backend rebuild completed');
+    await execAsync(`sh -c '${rebuildScript}'`);
+    console.log('Docker rebuild completed successfully');
 
-    console.log('Rebuilding frontend...');
-    await execAsync('docker-compose -f docker-compose.dev.yml up -d --build --no-deps --force-recreate frontend');
-    console.log('Frontend rebuild completed');
-
-    return { success: true, message: 'Rebuild triggered successfully' };
+    return { success: true, message: 'Rebuild triggered successfully from GitHub' };
   } catch (error) {
     console.error('Rebuild failed:', error);
     return {

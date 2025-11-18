@@ -26,6 +26,7 @@ import assistantRouter from './routes/assistant.js';
 import searchRouter from './routes/search.js';
 import ingestRouter from './routes/ingest.js';
 import aiRouter from './routes/ai.js';
+import webhookRouter from './routes/webhook.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/events', eventsRouter);
 app.use('/api/leads', leadsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/quotes', quotesRouter);
+app.use('/api/estimates', quotesRouter);
 app.use('/api/contracts', contractsRouter);
 app.use('/api/insights', insightsRouter);
 app.use('/api/notifications', notificationsRouter);
@@ -63,6 +65,7 @@ app.use('/api/assistant', assistantRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/ingest', ingestRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/webhook', webhookRouter);
 
 if (hasClientBundle) {
   app.use(express.static(clientDistPath));
@@ -85,6 +88,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 export default app;
+
 
 
 
