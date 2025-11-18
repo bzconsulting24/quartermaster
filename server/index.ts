@@ -22,11 +22,15 @@ import insightsRouter from './routes/insights.js';
 import notificationsRouter from './routes/notifications.js';
 import workflowRulesRouter from './routes/workflowRules.js';
 import assistantRouter from './routes/assistant.js';
+import assistantActionsRouter from './routes/assistantActions.js';
+import assistantMemoryRouter from './routes/assistantMemory.js';
 
 import searchRouter from './routes/search.js';
 import ingestRouter from './routes/ingest.js';
 import aiRouter from './routes/ai.js';
 import webhookRouter from './routes/webhook.js';
+import driveRouter from './routes/drive.js';
+import oneDriveRouter from './routes/onedrive.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -61,10 +65,14 @@ app.use('/api/insights', insightsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/workflow-rules', workflowRulesRouter);
 app.use('/api/assistant', assistantRouter);
+app.use('/api/assistant/actions', assistantActionsRouter);
+app.use('/api/assistant/memory', assistantMemoryRouter);
 
 app.use('/api/search', searchRouter);
 app.use('/api/ingest', ingestRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/drive', driveRouter);
+app.use('/api/onedrive', oneDriveRouter);
 app.use('/api/webhook', webhookRouter);
 
 if (hasClientBundle) {
@@ -88,6 +96,11 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 export default app;
+
+
+
+
+
 
 
 

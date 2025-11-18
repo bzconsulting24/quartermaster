@@ -3,16 +3,17 @@ import { COLORS } from '../data/uiConstants';
 import { Search, Bell, Bot, Settings } from 'lucide-react';
 
 type BZHeaderProps = {
-  currentUser: UserSummary;
-  notifications: number;
-  setShowNotifications: (show: boolean) => void;
-  setShowAssistant: (show: boolean) => void;
+  currentUser?: UserSummary;
+  notifications?: number;
+  setShowNotifications?: (show: boolean) => void;
+  setShowAssistant?: (show: boolean) => void;
   onOpenCommand?: () => void;
   focusMode?: boolean;
   onToggleFocus?: () => void;
+  onOpenSettings?: () => void;
 };
 
-const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAssistant, onOpenCommand, focusMode, onToggleFocus }: BZHeaderProps) => (
+const BZHeader = ({ currentUser = { name: 'User', initials: 'U' }, notifications = 0, setShowNotifications, setShowAssistant, onOpenCommand, focusMode = false, onToggleFocus, onOpenSettings }: BZHeaderProps) => (
   <div style={{
     background: COLORS.navyDark,
     borderBottom: `1px solid ${COLORS.navyLight}`,
@@ -47,7 +48,7 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAss
         <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', width: '16px', height: '16px' }} />
         <input
           type="text"
-          placeholder="Type to search • Ctrl+K"
+          placeholder="Type to search  •  Ctrl+K"
           onFocus={() => onOpenCommand && onOpenCommand()}
           onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); onOpenCommand && onOpenCommand(); } }}
           style={{
@@ -67,7 +68,7 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAss
       <button onClick={() => onOpenCommand && onOpenCommand()} style={{ background: 'transparent', border: '1px solid #374151', color: '#E5E7EB', padding: '6px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>Ctrl+K</button>
       <button onClick={() => onToggleFocus && onToggleFocus()} style={{ background: focusMode ? '#10B981' : 'transparent', border: '1px solid #374151', color: focusMode ? '#06251c' : '#E5E7EB', padding: '6px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>{focusMode ? 'Focus: On' : 'Focus: Off'}</button>
       <button
-        onClick={() => setShowNotifications(true)}
+        onClick={() => setShowNotifications && setShowNotifications(true)}
         style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', position: 'relative' }}
       >
         <Bell size={20} color="white" />
@@ -90,12 +91,12 @@ const BZHeader = ({ currentUser, notifications, setShowNotifications, setShowAss
         )}
       </button>
       <button
-        onClick={() => setShowAssistant(true)}
+        onClick={() => setShowAssistant && setShowAssistant(true)}
         style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}
       >
         <Bot size={20} color="white" />
       </button>
-      <button style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>
+      <button onClick={() => onOpenSettings && onOpenSettings()} style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>
         <Settings size={20} color="white" />
       </button>
       <div style={{

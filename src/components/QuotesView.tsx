@@ -66,6 +66,24 @@ const QuotesView = () => {
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={() => setShowAIModal(true)} style={{ padding: '10px 12px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>AI Draft</button>
+          <button
+            onClick={async () => {
+              await fetch('/api/drive/export/estimates/csv', { method: 'POST' });
+              alert('Estimates CSV uploaded to Drive');
+            }}
+            style={{ padding: '10px 12px', background: '#7C3AED', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={async () => {
+              await fetch('/api/drive/export/estimates/xlsx', { method: 'POST' });
+              alert('Estimates XLSX uploaded to Drive');
+            }}
+            style={{ padding: '10px 12px', background: '#6B7280', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Export XLSX
+          </button>
           <Filter size={18} color="#6B7280" />
           <select
             value={statusFilter}
@@ -185,8 +203,29 @@ const QuotesView = () => {
                       <button title="Send Estimate" onClick={() => void sendEstimate(quote.id)} style={{ marginRight: 8, padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}>
                         <Send size={14} style={{ verticalAlign: 'middle' }} />
                       </button>
-                      <button title="Convert to Invoice" onClick={() => void convertToInvoice(quote.id)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}>
+                      <button title="Convert to Invoice" onClick={() => void convertToInvoice(quote.id)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer', marginRight: 8 }}>
                         <Repeat size={14} style={{ verticalAlign: 'middle' }} />
+                      </button>
+                      <button
+                        title="Save to Drive"
+                        onClick={async () => {
+                          await fetch('/api/drive/upload/estimate/' + quote.id, { method: 'POST' });
+                          alert('Estimate uploaded to Drive');
+                        }}
+                        style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer', marginRight: 8 }}
+                      >
+                        Save Drive
+                      </button>
+                      <button
+                        title="Save to Disk"
+                        onClick={async () => {
+                          const r = await fetch('/api/drive/local/estimate/' + quote.id, { method: 'POST' });
+                          const j = await r.json();
+                          alert('Saved: ' + j.file);
+                        }}
+                        style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}
+                      >
+                        Save Disk
                       </button>
                     </td>
                   </tr>

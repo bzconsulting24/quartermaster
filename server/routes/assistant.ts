@@ -99,7 +99,7 @@ router.post(
       contextSummary = summarizeOpportunity(opportunity);
       answer = buildResponse(prompt, contextSummary);
 
-      await prisma.aiInsight.create({
+      await prisma.aIInsight.create({
         data: {
           type: AIInsightType.NEXT_STEP,
           summary: answer,
@@ -145,3 +145,4 @@ router.post(
 );
 
 export default router;
+

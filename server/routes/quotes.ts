@@ -137,10 +137,7 @@ router.post(
     const quote = await prisma.quote.findUnique({ where: { id }, include: { lines: true, account: true } });
     if (!quote) return res.status(404).json({ message: 'Quote not found' });
     const amount = quote.lines.reduce((s, l) => s + (l.quantity ?? 1) * l.unitPrice, 0);
-    const invoiceId = INV--;
-    const invoice = await prisma.invoice.create({
-      data: {
-        id: invoiceId,
+    const genId = () => `INV-${Date.now()}-${Math.floor(Math.random()*10000)}`; const invoiceId = genId(); const invoice = await prisma.invoice.create({ data: { id: invoiceId,
         amount,
         status: 'DRAFT',
         issueDate: new Date(),
@@ -179,7 +176,7 @@ router.get(
 
     doc.fillColor('#111827');
     doc.moveDown(2);
-    doc.fontSize(18).text(`Estimate #${quote.quoteNumber}`);
+    doc.fontSize(18).text(`Estimate #${quote.number}`);
     doc.moveDown(0.5);
     doc.fontSize(12).text('Account: ' + (quote.account?.name || 'N/A'));
     if (quote.opportunity?.name) doc.text('Opportunity: ' + quote.opportunity.name);
@@ -217,6 +214,7 @@ router.get(
     doc.end();
   })
 );
+
 
 
 
