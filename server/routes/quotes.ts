@@ -179,10 +179,10 @@ router.get(
 
     doc.fillColor('#111827');
     doc.moveDown(2);
-    doc.fontSize(18).text(Estimate );
+    doc.fontSize(18).text(`Estimate #${quote.quoteNumber}`);
     doc.moveDown(0.5);
-    doc.fontSize(12).text(Account: );
-    if (quote.opportunity?.name) doc.text(Opportunity: );
+    doc.fontSize(12).text(`Account: ${quote.account?.name || 'N/A'}`);
+    if (quote.opportunity?.name) doc.text(`Opportunity: ${quote.opportunity.name}`);
     doc.moveDown();
 
     // Table header
