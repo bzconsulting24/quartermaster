@@ -109,7 +109,8 @@ const HomeView = () => {
         {automationStats.map((stat, idx) => (
           <div
             key={idx}
-            style={{
+                    onClick={async () => { if (action.label==='New Opportunity') { const name=prompt('Opportunity name?'); const accountIdRaw=prompt('Account ID?'); const accountId=accountIdRaw?parseInt(accountIdRaw):NaN; const amountRaw=prompt('Amount?'); const amount=amountRaw?parseInt(amountRaw):0; const closeDate=new Date(Date.now()+1000*60*60*24*30).toISOString(); if(name && Number.isFinite(accountId)){ await fetch('/api/opportunities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, amount, closeDate, accountId, owner:'Me' })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'opportunities' }})); } } else if (action.label==='Add Contact') { const name=prompt('Contact name?'); const email=prompt('Email?'); const accountIdRaw=prompt('Account ID?'); const accountId=accountIdRaw?parseInt(accountIdRaw):NaN; if(name && email && Number.isFinite(accountId)){ await fetch('/api/contacts',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, email, accountId })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'contacts' }})); } } else if (action.label==='Schedule Meeting') { await fetch('/api/activities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'MEETING', subject:'Scheduled meeting', performedBy:'user' })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'calendar' }})); } else if (action.label==='Create Task') { const title=prompt('Task title?'); if(!title) return; const dueDate=new Date(Date.now()+86400000).toISOString(); await fetch('/api/tasks',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, dueDate, assignedTo:'Me' })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'tasks' }})); } }}
+                    style={{
               background: 'white',
               padding: '20px',
               borderRadius: '8px',
@@ -137,7 +138,8 @@ const HomeView = () => {
           return (
             <div
               key={idx}
-              style={{
+
+                    style={{
                 background: 'white',
                 padding: '20px',
                 borderRadius: '8px',
@@ -201,9 +203,9 @@ const HomeView = () => {
             <h2 style={{ fontSize: '20px', fontWeight: '600', color: COLORS.navyDark }}>
               Recent Activity
             </h2>
-            <a href="#" style={{ fontSize: '14px', color: COLORS.gold, textDecoration: 'none', fontWeight: '500' }}>
+            <button onClick={() => window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'opportunities' } }))} style={{ fontSize: '14px', color: COLORS.gold, textDecoration: 'none', fontWeight: '500' }}>
               View All
-            </a>
+            </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {activities.map((activity) => (
@@ -257,6 +259,7 @@ const HomeView = () => {
                 return (
                   <button
                     key={idx}
+
                     style={{
                       padding: '12px 16px',
                       background: 'white',
@@ -343,7 +346,8 @@ const HomeView = () => {
               ].map((event, idx) => (
                 <div
                   key={idx}
-                  style={{
+
+                    style={{
                     padding: '12px',
                     background: '#F9FAFB',
                     borderRadius: '6px',
@@ -371,4 +375,10 @@ const HomeView = () => {
 };
 
 export default HomeView;
+
+
+
+
+
+
 

@@ -142,65 +142,13 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: COLORS.navyDark }}>Quick Actions</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <button style={{
-                    padding: '12px',
-                    background: 'white',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}>
-                    <Mail size={16} color={COLORS.navyDark} />
-                    Send Email
+                  <button onClick={async()=>{ await fetch('/api/activities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'EMAIL', subject:'Email sent', description:'Outbound email to contact', performedBy:'user', opportunityId: opportunity.id })}); alert('Logged email activity'); }} style={{}}><Mail size={16} color={COLORS.navyDark} \/> Send Email
                   </button>
-                  <button style={{
-                    padding: '12px',
-                    background: 'white',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}>
-                    <Phone size={16} color={COLORS.navyDark} />
-                    Log Call
+                  <button onClick={async()=>{ await fetch('/api/activities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'CALL', subject:'Call logged', description:'Call with prospect', performedBy:'user', opportunityId: opportunity.id })}); alert('Logged call'); }} style={{}}><Phone size={16} color={COLORS.navyDark} \/> Log Call
                   </button>
-                  <button style={{
-                    padding: '12px',
-                    background: 'white',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}>
-                    <Calendar size={16} color={COLORS.navyDark} />
-                    Schedule Meeting
+                  <button onClick={async()=>{ await fetch('/api/activities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'MEETING', subject:'Meeting scheduled', description:'Calendar event created', performedBy:'user', opportunityId: opportunity.id })}); alert('Meeting scheduled'); }} style={{}}><Calendar size={16} color={COLORS.navyDark} \/> Schedule Meeting
                   </button>
-                  <button style={{
-                    padding: '12px',
-                    background: 'white',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500'
-                  }}>
-                    <CheckSquare size={16} color={COLORS.navyDark} />
-                    Create Task
+                  <button onClick={async()=>{ const title=prompt('Task title?'); if(!title) return; const due = new Date(Date.now()+86400000).toISOString(); await fetch('/api/tasks',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, dueDate: due, assignedTo:'Me', opportunityId: opportunity.id })}); alert('Task created'); }} style={{}}><CheckSquare size={16} color={COLORS.navyDark} \/> Create Task
                   </button>
                 </div>
               </div>
@@ -210,19 +158,7 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
           {activeTab === 'activity' && (
             <div>
               <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
-                <button style={{
-                  padding: '8px 16px',
-                  background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <Plus size={16} />
-                  Log Activity
+                <button onClick={async()=>{ const subject=prompt('Activity subject?'); if(!subject) return; await fetch('/api/activities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ subject, description:'Quick log', performedBy:'user', opportunityId: opportunity.id })}); }} style={{}}><Plus size={16} \/> Log Activity
                 </button>
                 <button style={{
                   padding: '8px 16px',
@@ -362,3 +298,4 @@ const OpportunityDetailModal = ({ opportunity, onClose }: OpportunityDetailModal
 };
 
 export default OpportunityDetailModal;
+

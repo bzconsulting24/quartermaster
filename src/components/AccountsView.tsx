@@ -57,22 +57,7 @@ const AccountsView = () => {
             {loading ? 'Loading...' : `${filteredAccounts.length} accounts`}
           </p>
         </div>
-        <button style={{
-          padding: '10px 20px',
-          background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <Plus size={16} />
-          New Account
+        <button onClick={async()=>{ const name=prompt('Account name?'); if(!name) return; const r=await fetch('/api/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}); if(r.ok){ location.reload(); } }} style={{ padding: '10px 20px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}><Plus size={16} /> New Account
         </button>
       </div>
 
@@ -239,3 +224,9 @@ const AccountsView = () => {
 };
 
 export default AccountsView;
+
+
+
+
+
+

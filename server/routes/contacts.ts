@@ -18,6 +18,16 @@ router.get(
   })
 );
 
+router.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { name, email, phone, title, owner, accountId } = req.body as any;
+    if (!name || !email || !accountId) return res.status(400).json({ message: 'name, email, and accountId are required' });
+    const contact = await prisma.contact.create({ data: { name, email, phone, title, owner, accountId } });
+    res.status(201).json(contact);
+  })
+);
+
 export default router;
 
 
@@ -29,4 +39,5 @@ router.patch(
     res.json(contact);
   })
 );
+
 

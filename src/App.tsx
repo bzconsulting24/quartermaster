@@ -33,6 +33,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
   
   const [showSettings, setShowSettings] = useState(false);
 
@@ -55,22 +56,14 @@ export default function App() {
       setLoading(false);
     }
   }, []);
-
   useEffect(() => {
-    loadOpportunities();
-  }, [loadOpportunities]);
-
-  useEffect(() => {
-    const source = new EventSource('/api/events');
-    const refresh = () => loadOpportunities();
-    source.addEventListener('opportunity.created', refresh);
-    source.addEventListener('opportunity.stageChanged', refresh);
-    return () => {
-      source.removeEventListener('opportunity.created', refresh);
-      source.removeEventListener('opportunity.stageChanged', refresh);
-      source.close();
+    const onNavigate = (e: any) => {
+      const tab = e?.detail?.tab as any;
+      if (tab) setCurrentTab(tab);
     };
-  }, [loadOpportunities]);
+    window.addEventListener('app:navigate', onNavigate as any);
+    return () => window.removeEventListener('app:navigate', onNavigate as any);
+  }, []);
 
   const handleDragStart = (_event: DragEvent<HTMLDivElement>, opportunity: Opportunity) => {
     setDraggedItem(opportunity);
@@ -188,6 +181,8 @@ export default function App() {
     </div>
   );
 }
+
+
 
 
 

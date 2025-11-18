@@ -24,6 +24,18 @@ router.get(
   })
 );
 
+router.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { name, industry, type, revenue, employees, owner, phone, website, location } = req.body as any;
+    if (!name) return res.status(400).json({ message: 'name is required' });
+    const account = await prisma.account.create({
+      data: { name, industry, type, revenue, employees, owner, phone, website, location }
+    });
+    res.status(201).json(account);
+  })
+);
+
 export default router;
 
 
@@ -35,4 +47,5 @@ router.patch(
     res.json(account);
   })
 );
+
 

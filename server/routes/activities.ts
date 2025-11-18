@@ -29,4 +29,15 @@ router.get(
   })
 );
 
+router.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { type='NOTE', subject, description, performedBy='user', opportunityId } = req.body as any;
+    if (!subject) return res.status(400).json({ message: 'subject required' });
+    const activity = await prisma.activity.create({ data: { type, subject, description, performedBy, opportunityId } });
+    res.status(201).json(activity);
+  })
+);
+
 export default router;
+

@@ -50,21 +50,7 @@ const TasksView = () => {
     <div style={{ padding: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark }}>Tasks</h1>
-        <button style={{
-          padding: '10px 20px',
-          background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <Plus size={16} />
-          New Task
+        <button onClick={async()=>{ const title=prompt('Task title?'); const due=(new Date(Date.now()+86400000)).toISOString(); const r=await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title, dueDate: due, assignedTo:'Me'})}); if(r.ok){ location.reload(); } }} style={{}}><Plus size={16} \/> New Task
         </button>
       </div>
 
@@ -279,3 +265,4 @@ const TasksView = () => {
 };
 
 export default TasksView;
+

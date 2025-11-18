@@ -22,4 +22,15 @@ router.get(
   })
 );
 
+router.post(
+  '/',
+  asyncHandler(async (req, res) => {
+    const { title, dueDate, priority, assignedTo, status, opportunityId, accountId } = req.body as any;
+    if (!title || !dueDate || !assignedTo) return res.status(400).json({ message: 'title, dueDate, assignedTo required' });
+    const task = await prisma.task.create({ data: { title, dueDate: new Date(dueDate), priority: (priority as any) ?? 'MEDIUM', status: (status as any) ?? 'OPEN', assignedTo, opportunityId, accountId } });
+    res.status(201).json(task);
+  })
+);
+
 export default router;
+

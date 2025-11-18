@@ -65,7 +65,7 @@ async function draftWithOpenAI(kind: 'quote'|'invoice', content: string) {
           { role: 'user', content: prompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.1
+        temperature: 0, max_tokens: 600
       })
     });
     if (!res.ok) return null;
@@ -126,7 +126,7 @@ router.post(
           { role: 'user', content: prompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.1
+        temperature: 0, max_tokens: 600
       })
     });
     const data = await r.json();
@@ -136,3 +136,5 @@ router.post(
     res.json({ data: parsed });
   })
 );
+
+

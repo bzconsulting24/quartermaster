@@ -82,7 +82,7 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                     <div style={{ color: COLORS.navyDark, fontSize: '14px', fontWeight: '600', flex: 1 }}>
                       {opp.name}
                     </div>
-                    <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                    <button onClick={(e)=>{ e.stopPropagation(); onOpportunityClick(opp); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}>
                       <MoreHorizontal size={16} color="#6B7280" />
                     </button>
                   </div>
@@ -122,3 +122,4 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
 );
 
 export default BZPipeline;
+

@@ -77,22 +77,7 @@ const InvoicesView = () => {
             {loading ? 'Loading...' : `${filteredInvoices.length} invoices`}
           </p>
         </div>
-        <button style={{
-          padding: '10px 20px',
-          background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontSize: '14px',
-          fontWeight: '500',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <Plus size={16} />
-          New Invoice</button>\r\n        <button onClick={async()=>{ await fetch('/api/drive/export/invoices/csv',{method:'POST'}); alert('CSV uploaded to Drive');}} style={{ marginLeft: 8, padding: '10px 12px', background: '#7C3AED', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Export CSV to Drive</button>\r\n        <button onClick={async()=>{ const r=await fetch('/api/drive/local/invoices/csv',{method:'POST'}); const j=await r.json(); alert('CSV saved: '+j.file);}} style={{ marginLeft: 8, padding: '10px 12px', background: '#6B7280', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Export CSV to Disk</button>\r\n        {showCreate && (<InvoiceCreateModal onClose={()=> setShowCreate(false)} onCreated={()=> window.location.reload()} />)}
+        <button onClick={() => setShowCreate(true)} style={{ padding: '10px 20px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}><Plus size={16} /> New Invoice</button>\r\n        <button onClick={async()=>{ await fetch('/api/drive/export/invoices/csv',{method:'POST'}); alert('CSV uploaded to Drive');}} style={{ marginLeft: 8, padding: '10px 12px', background: '#7C3AED', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Export CSV to Drive</button>\r\n        <button onClick={async()=>{ const r=await fetch('/api/drive/local/invoices/csv',{method:'POST'}); const j=await r.json(); alert('CSV saved: '+j.file);}} style={{ marginLeft: 8, padding: '10px 12px', background: '#6B7280', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Export CSV to Disk</button>\r\n        {showCreate && (<InvoiceCreateModal onClose={()=> setShowCreate(false)} onCreated={()=> window.location.reload()} />)}
       </div>
 
       <div style={{
@@ -295,6 +280,18 @@ const InvoicesView = () => {
       </div>
 
       {selectedInvoice && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ width: 720, background: 'white', borderRadius: 8, padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.navyDark }}>Invoice Details</div>
+              <button onClick={() => setSelectedInvoice(null)} style={{ border: 'none', background: 'transparent', fontSize: '18px', cursor: 'pointer' }}>
+                ×
+              </button>
+            </div>
+            <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, margin: 0 }}>{JSON.stringify(selectedInvoice, null, 2)}</pre>
+          </div>
+        </div>
+      )}
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -385,6 +382,13 @@ const InvoicesView = () => {
 };
 
 export default InvoicesView;
+
+
+
+
+
+
+
 
 
 
