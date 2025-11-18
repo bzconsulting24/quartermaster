@@ -8,7 +8,7 @@ export type WorkflowJobData = {
   context?: Record<string, unknown>;
 };
 
-const QUEUE_NAME = 'automation:workflow';
+const QUEUE_NAME = 'automation-workflow';
 
 export const automationQueue = new Queue<WorkflowJobData>(QUEUE_NAME, {
   connection: redisConnection,
@@ -19,5 +19,5 @@ export const automationQueue = new Queue<WorkflowJobData>(QUEUE_NAME, {
 });
 
 export const enqueueWorkflowJob = async (data: WorkflowJobData) => {
-  await automationQueue.add(`workflow:${data.triggerType}`, data);
+  await automationQueue.add(`workflow-${data.triggerType}`, data);
 };
