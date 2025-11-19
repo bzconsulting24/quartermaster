@@ -7,6 +7,7 @@ import NotificationsPanel from './components/NotificationsPanel';
 import HomeView from './components/HomeView';
 import AccountsView from './components/AccountsView';
 import ContactsView from './components/ContactsView';
+import CustomerInformationView from './components/CustomerInformationView';
 import InvoicesView from './components/InvoicesView';
 import TasksView from './components/TasksView';
 import CalendarView from './components/CalendarView';
@@ -164,6 +165,7 @@ export default function App() {
 
         {currentTab === 'accounts' && <AccountsView />}
         {currentTab === 'contacts' && <ContactsView />}
+        {currentTab === 'customerInformation' && <CustomerInformationView />}
         {currentTab === 'invoices' && <InvoicesView />}
         {currentTab === 'leads' && <LeadsView />}
         {currentTab === 'estimates' && <QuotesView />}
@@ -188,7 +190,6 @@ export default function App() {
     </div>
   );
 }
-
 
 
 

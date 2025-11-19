@@ -200,6 +200,7 @@ export type AppTab =
   | 'opportunities'
   | 'accounts'
   | 'contacts'
+  | 'customerInformation'
   | 'invoices'
   | 'tasks'
   | 'calendar'
@@ -209,5 +210,4 @@ export type AppTab =
   | 'contracts';
 
 export type OpportunityModalTab = 'overview' | 'activity' | 'contacts' | 'documents';
-
 

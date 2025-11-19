@@ -19,6 +19,10 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
   const fields = [ 'name', 'industry', 'owner', 'phone', 'website', 'location' ];
 
   const magicFill = async () => {
+    if (!notes.trim() && !file) {
+      setError('Add some notes or attach a PDF for Magic Fill to work.');
+      return;
+    }
     setLoading(true); setError(null);
     try {
       let pdfText = '';
@@ -28,7 +32,11 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
         if (r.ok) { const j = await r.json(); pdfText = j.text || ''; }
       }
       const res = await fetch('/api/ai/form-parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schema: fields.map(n=>({ name: n })), text: notes, pdfText }) });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = typeof data?.message === 'string' ? data.message : 'Magic Fill failed';
+        throw new Error(msg);
+      }
       const d = data.data || {};
       const next: any = { ...form };
       for (const k of fields) if (d[k]) next[k] = d[k];
