@@ -2,14 +2,16 @@ import { useState } from "react";
 import { COLORS } from "../data/uiConstants";
 import type { AccountRecord } from "../types";
 
-export default function AccountEditModal({ account, onClose, onSaved }: { account: AccountRecord; onClose: ()=>void; onSaved: (a: AccountRecord)=>void }) {
+export default function AccountEditModal({ account, onClose, onSaved }: { account?: AccountRecord; onClose: ()=>void; onSaved: (a: AccountRecord)=>void }) {
+  const isEditing = !!account;
+
   const [form, setForm] = useState<any>({
-    name: account.name,
-    industry: account.industry ?? '',
-    owner: account.owner ?? '',
-    phone: account.phone ?? '',
-    website: account.website ?? '',
-    location: account.location ?? ''
+    name: account?.name ?? '',
+    industry: account?.industry ?? '',
+    owner: account?.owner ?? '',
+    phone: account?.phone ?? '',
+    website: account?.website ?? '',
+    location: account?.location ?? ''
   });
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -46,9 +48,16 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
   };
 
   const save = async () => {
+    if (!form.name?.trim()) {
+      setError('Account name is required');
+      return;
+    }
+
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`/api/accounts/${account.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const url = isEditing ? `/api/accounts/${account.id}` : '/api/accounts';
+      const method = isEditing ? 'PATCH' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       if (!res.ok) throw new Error('Save failed');
       const updated = await res.json();
       onSaved(updated);
@@ -61,7 +70,9 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 70 }} onClick={onClose}>
       <div onClick={(e)=> e.stopPropagation()} style={{ width: 720, margin: '10vh auto', background: 'white', borderRadius: 8, border: '1px solid #E5E7EB', padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.navyDark }}>Edit Account</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.navyDark }}>
+            {isEditing ? 'Edit Account' : 'Create New Account'}
+          </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

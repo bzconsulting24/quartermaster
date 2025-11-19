@@ -10,24 +10,25 @@ const AccountsView = () => {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEdit, setShowEdit] = useState<null | AccountRecord>(null);
+  const [showCreate, setShowCreate] = useState(false);
+
+  const loadAccounts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/accounts');
+      if (!response.ok) {
+        throw new Error('Unable to load accounts');
+      }
+      const data = await response.json();
+      setAccounts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadAccounts = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/accounts');
-        if (!response.ok) {
-          throw new Error('Unable to load accounts');
-        }
-        const data = await response.json();
-        setAccounts(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadAccounts();
   }, []);
 
@@ -57,7 +58,10 @@ const AccountsView = () => {
             {loading ? 'Loading...' : `${filteredAccounts.length} accounts`}
           </p>
         </div>
-        <button onClick={async()=>{ const name=prompt('Account name?'); if(!name) return; const r=await fetch('/api/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}); if(r.ok){ location.reload(); } }} style={{ padding: '10px 20px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}><Plus size={16} /> New Account
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{ padding: '10px 20px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          <Plus size={16} /> New Account
         </button>
       </div>
 
@@ -216,7 +220,19 @@ const AccountsView = () => {
         <AccountEditModal
           account={showEdit}
           onClose={() => setShowEdit(null)}
-          onSaved={(a) => setAccounts((prev) => prev.map((x) => (x.id === a.id ? a : x)))}
+          onSaved={(a) => {
+            setShowEdit(null);
+            setAccounts((prev) => prev.map((x) => (x.id === a.id ? a : x)));
+          }}
+        />
+      )}
+      {showCreate && (
+        <AccountEditModal
+          onClose={() => setShowCreate(false)}
+          onSaved={(a) => {
+            setShowCreate(false);
+            loadAccounts();
+          }}
         />
       )}
     </div>
