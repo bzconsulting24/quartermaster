@@ -32,7 +32,9 @@
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
       "Bash(start \"\" \"C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(docker network inspect:*)",
+      "Bash(docker network:*)"
     ],
     "deny": [],
     "ask": []
