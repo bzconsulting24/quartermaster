@@ -27,7 +27,12 @@
       "Bash(gh run list:*)",
       "Bash(git ls-tree:*)",
       "Bash(git fetch:*)",
-      "Bash(git check-ignore:*)"
+      "Bash(git check-ignore:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(start \"\" \"C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe\")",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

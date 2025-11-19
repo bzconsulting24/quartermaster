@@ -56,6 +56,13 @@ export default function App() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (currentTab === 'opportunities') {
+      loadOpportunities();
+    }
+  }, [currentTab, loadOpportunities]);
+
   useEffect(() => {
     const onNavigate = (e: any) => {
       const tab = e?.detail?.tab as any;
