@@ -646,9 +646,8 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   fontSize: 14,
                   color: '#6B7280'
                 }}>
-                  {selectedAccount.email && <div>{selectedAccount.email}</div>}
                   {selectedAccount.phone && <div>{selectedAccount.phone}</div>}
-                  {selectedAccount.address && <div>{selectedAccount.address}</div>}
+                  {selectedAccount.location && <div>{selectedAccount.location}</div>}
                 </div>
               )}
             </div>
@@ -922,9 +921,8 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     <div style={{ fontWeight: 600, marginBottom: 4 }}>
                       {selectedAccount?.name || 'Customer Name'}
                     </div>
-                    {selectedAccount?.email && <div>{selectedAccount.email}</div>}
                     {selectedAccount?.phone && <div>{selectedAccount.phone}</div>}
-                    {selectedAccount?.address && <div>{selectedAccount.address}</div>}
+                    {selectedAccount?.location && <div>{selectedAccount.location}</div>}
                   </div>
                 </div>
                 <div>

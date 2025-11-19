@@ -154,6 +154,7 @@ export interface QuoteLine {
   description: string;
   quantity: number;
   unitPrice: number;
+  discount?: number;
   productId?: number | null;
 }
 

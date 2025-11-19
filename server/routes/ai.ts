@@ -97,6 +97,199 @@ router.post(
   })
 );
 
+// Generate invoice from natural language prompt
+router.post(
+  '/generate-invoice',
+  asyncHandler(async (req, res) => {
+    const { prompt } = req.body;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({ message: 'OpenAI API key not configured' });
+    }
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ message: 'Prompt is required' });
+    }
+
+    try {
+      const systemPrompt = `You are an invoice generation assistant. Extract or generate invoice information from the user's request. Return strict JSON with this schema:
+{
+  "accountName": "string (customer/company name)",
+  "items": [{ "description": "string", "quantity": number, "rate": number }],
+  "notes": "string (optional)",
+  "dueDate": "ISO date string (optional)",
+  "total": number
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-nano',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_completion_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No response from AI');
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error('AI generation error:', error);
+      res.status(500).json({ message: 'Failed to generate invoice', error: String(error) });
+    }
+  })
+);
+
+// Generate estimate from natural language prompt
+router.post(
+  '/generate-estimate',
+  asyncHandler(async (req, res) => {
+    const { prompt } = req.body;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({ message: 'OpenAI API key not configured' });
+    }
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ message: 'Prompt is required' });
+    }
+
+    try {
+      const systemPrompt = `You are an estimate/quote generation assistant. Extract or generate estimate information from the user's request. Return strict JSON with this schema:
+{
+  "accountName": "string (customer/company name)",
+  "items": [{ "description": "string", "quantity": number, "unitPrice": number, "discount": number }],
+  "notes": "string (optional terms/conditions)",
+  "expiresAt": "ISO date string (optional)",
+  "total": number
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-nano',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_completion_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No response from AI');
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error('AI generation error:', error);
+      res.status(500).json({ message: 'Failed to generate estimate', error: String(error) });
+    }
+  })
+);
+
+// Extract information from text/email
+router.post(
+  '/extract',
+  asyncHandler(async (req, res) => {
+    const { text, type } = req.body; // type: 'invoice' or 'estimate'
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({ message: 'OpenAI API key not configured' });
+    }
+
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ message: 'Text is required' });
+    }
+
+    const docType = type === 'estimate' ? 'estimate/quote' : 'invoice';
+
+    try {
+      const systemPrompt = `You are a document extraction assistant. Extract ${docType} information from the provided text. Return strict JSON with this schema:
+{
+  "customerName": "string (optional)",
+  "items": [{ "description": "string", "quantity": number, ${type === 'estimate' ? '"unitPrice": number, "discount": number' : '"rate": number'} }],
+  "total": number (optional),
+  "issueDate": "ISO date string (optional)",
+  "dueDate": "ISO date string (optional, for invoices)",
+  "expiresAt": "ISO date string (optional, for estimates)",
+  "notes": "string (optional)"
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-nano',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Extract ${docType} information from this text:\n\n${text}` }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0,
+          max_completion_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No response from AI');
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error('AI extraction error:', error);
+      res.status(500).json({ message: 'Failed to extract information', error: String(error) });
+    }
+  })
+);
+
 export default router;
 
 router.post(
