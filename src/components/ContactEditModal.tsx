@@ -9,6 +9,7 @@ type ContactFormState = {
   phone: string;
   owner: string;
   accountId: string;
+  lastContact: string;
 };
 
 const initialForm = (contact?: ContactRecord): ContactFormState => ({
@@ -17,7 +18,8 @@ const initialForm = (contact?: ContactRecord): ContactFormState => ({
   email: contact?.email ?? '',
   phone: contact?.phone ?? '',
   owner: contact?.owner ?? '',
-  accountId: contact?.account?.id ? String(contact.account.id) : ''
+  accountId: contact?.account?.id ? String(contact.account.id) : '',
+  lastContact: contact?.lastContact ? new Date(contact.lastContact).toISOString().split('T')[0] : ''
 });
 
 export default function ContactEditModal({
@@ -66,7 +68,8 @@ export default function ContactEditModal({
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         owner: form.owner.trim() || null,
-        accountId: Number(form.accountId)
+        accountId: Number(form.accountId),
+        lastContact: form.lastContact ? new Date(form.lastContact).toISOString() : null
       };
       const res = await fetch(contact ? `/api/contacts/${contact.id}` : '/api/contacts', {
         method: contact ? 'PATCH' : 'POST',
@@ -119,53 +122,35 @@ export default function ContactEditModal({
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {/* Contact Name */}
           <div>
-            <label style={{ fontSize: 12, color: '#6B7280' }}>Name*</label>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Contact Name *</label>
             <input
               value={form.name}
               onChange={(e) => update('name', e.target.value)}
+              placeholder="Enter full name"
               style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
             />
           </div>
+
+          {/* Title */}
           <div>
-            <label style={{ fontSize: 12, color: '#6B7280' }}>Title</label>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Title</label>
             <input
               value={form.title}
               onChange={(e) => update('title', e.target.value)}
+              placeholder="e.g., VP of Sales"
               style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
             />
           </div>
+
+          {/* Account */}
           <div>
-            <label style={{ fontSize: 12, color: '#6B7280' }}>Email*</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => update('email', e.target.value)}
-              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: '#6B7280' }}>Phone</label>
-            <input
-              value={form.phone}
-              onChange={(e) => update('phone', e.target.value)}
-              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: '#6B7280' }}>Owner</label>
-            <input
-              value={form.owner}
-              onChange={(e) => update('owner', e.target.value)}
-              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: '#6B7280' }}>Account*</label>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Account *</label>
             <select
               value={form.accountId}
               onChange={(e) => update('accountId', e.target.value)}
-              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8, cursor: 'pointer' }}
             >
               <option value="">Select account…</option>
               {accounts.map((acc) => (
@@ -174,6 +159,51 @@ export default function ContactEditModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Email (Contact Info) */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Email *</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => update('email', e.target.value)}
+              placeholder="contact@example.com"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
+            />
+          </div>
+
+          {/* Phone (Contact Info) */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Phone</label>
+            <input
+              value={form.phone}
+              onChange={(e) => update('phone', e.target.value)}
+              placeholder="+1 (555) 123-4567"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
+            />
+          </div>
+
+          {/* Last Contact */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Last Contact</label>
+            <input
+              type="date"
+              value={form.lastContact}
+              onChange={(e) => update('lastContact', e.target.value)}
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
+            />
+          </div>
+
+          {/* Owner */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Owner</label>
+            <input
+              value={form.owner}
+              onChange={(e) => update('owner', e.target.value)}
+              placeholder="Assigned owner"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 8 }}
+            />
           </div>
         </div>
 
