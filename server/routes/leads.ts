@@ -59,6 +59,23 @@ router.post(
             }
           });
           finalAccountId = newAccount.id;
+
+          // Also create a contact for this new account (for Customer Information view)
+          if (email && name) {
+            try {
+              await prisma.contact.create({
+                data: {
+                  name,
+                  email,
+                  phone: phone || null,
+                  owner: owner || null,
+                  accountId: finalAccountId
+                }
+              });
+            } catch (contactError) {
+              console.error('Failed to auto-create contact:', contactError);
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to auto-create account:', error);
