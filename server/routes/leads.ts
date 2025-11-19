@@ -37,6 +37,7 @@ router.post(
       return res.status(400).json({ message: 'name is required' });
     }
 
+    // Create the lead first
     const lead = await prisma.lead.create({
       data: {
         name,
@@ -51,6 +52,42 @@ router.post(
         accountId
       }
     });
+
+    // Auto-create opportunity in pipeline (Prospecting stage)
+    // Only if accountId is provided
+    if (accountId) {
+      try {
+        const opportunity = await prisma.opportunity.create({
+          data: {
+            name: `${name} - ${company || 'Opportunity'}`,
+            amount: score ? score * 100 : 0, // Convert lead score to estimated deal value
+            closeDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            probability: score || 10, // Use lead score as probability, default 10%
+            owner: owner || 'Unassigned',
+            stage: 'Prospecting', // Start in first stage
+            email,
+            phone,
+            accountId,
+            leadId: lead.id
+          },
+          include: {
+            account: true,
+            lead: true
+          }
+        });
+
+        // Return lead with the created opportunity
+        const leadWithOpportunity = await prisma.lead.findUnique({
+          where: { id: lead.id },
+          include: { account: true, opportunity: true }
+        });
+
+        return res.status(201).json(leadWithOpportunity);
+      } catch (error) {
+        // If opportunity creation fails, still return the lead
+        console.error('Failed to auto-create opportunity:', error);
+      }
+    }
 
     res.status(201).json(lead);
   })
