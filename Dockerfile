@@ -2,6 +2,9 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
 # Install dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -19,6 +22,9 @@ RUN npm prune --omit=dev
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Install OpenSSL for Prisma runtime
+RUN apk add --no-cache openssl
 
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
