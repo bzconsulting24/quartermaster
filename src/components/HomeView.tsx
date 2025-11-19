@@ -114,18 +114,8 @@ const HomeView = () => {
       return;
     }
     if (label === 'Add Contact') {
-      const name = prompt('Contact name?');
-      const email = prompt('Email?');
-      const accountIdRaw = prompt('Account ID?');
-      const accountId = accountIdRaw ? parseInt(accountIdRaw, 10) : NaN;
-      if (name && email && Number.isFinite(accountId)) {
-        await fetch('/api/contacts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, accountId })
-        });
-        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'contacts' } }));
-      }
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'contacts' } }));
+      setTimeout(() => window.dispatchEvent(new Event('contacts:new')), 0);
       return;
     }
     if (label === 'Schedule Meeting') {
@@ -431,7 +421,6 @@ const HomeView = () => {
 };
 
 export default HomeView;
-
 
 
 

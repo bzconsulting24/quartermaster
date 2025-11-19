@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Quartermaster is a full-stack CRM application with AI-powered automation features. It uses React + Vite frontend, Express backend, PostgreSQL database, Redis for job queues, and integrates with OpenAI's GPT-5-nano model for intelligent features.
 
+**Multi-Process Architecture**: The application requires three separate processes in development:
+1. Express API server (`npm run server:dev`) - handles HTTP requests
+2. BullMQ automation worker (`npm run worker:automation`) - processes async jobs
+3. Vite dev server (`npm run dev`) - serves frontend with HMR
+
+**IMPORTANT**: Clone the repo into a directory **without spaces** in the path (e.g., `~/workspace/quartermaster`). `npm install` fails on macOS when the path includes spaces.
+
 ## Development Commands
 
 ### Local Development
@@ -56,20 +63,34 @@ git config core.hooksPath .githooks
 ## Architecture
 
 ### Backend Structure (`server/`)
-- **routes/**: API endpoints organized by entity (opportunities, accounts, contacts, etc.)
-- **services/**: Business logic (workflow processor, integrations)
+- **index.ts**: Express app setup, middleware, route registration
+- **prismaClient.ts**: Singleton Prisma instance (prevents connection pool issues)
+- **routes/**: API endpoints organized by entity (27 route files)
+  - Core CRUD: `accounts.ts`, `contacts.ts`, `opportunities.ts`, `tasks.ts`, `leads.ts`
+  - Business logic: `invoices.ts`, `quotes.ts`, `contracts.ts`, `products.ts`
+  - AI features: `ai.ts` (PDF extraction), `assistant.ts`, `assistantActions.ts`, `insights.ts`
+  - Automation: `workflows.ts`, `workflowRules.ts`
+  - Integrations: `drive.ts`, `onedrive.ts`, `webhook.ts`
+  - Utilities: `overview.ts` (dashboard), `reports.ts`, `search.ts`, `events.ts` (SSE)
+  - **helpers.ts**: `asyncHandler` wrapper for error handling
+- **services/**: Business logic (`workflowProcessor.ts` - core automation engine)
 - **workers/**: Background job processors (`automationWorker.ts` processes BullMQ jobs)
-- **jobs/**: Job definitions for automation queue
-- **events/**: SSE event emitters for real-time updates
-- **middleware/**: Express middleware (error handlers, etc.)
-- **utils/**: Shared utilities
+- **jobs/**: Job queue definitions (`automationQueue.ts`)
+- **events/**: SSE event emitters (`eventBus.ts`)
+- **middleware/**: Express middleware (`errorHandler.ts`)
+- **utils/**: Shared utilities (`stageUtils.ts`, `googleDrive.ts`, `oneDrive.ts`, `aiMemory.ts`)
+- **config/**: Configuration (`redis.ts`)
 
 ### Frontend Structure (`src/`)
 - **App.tsx**: Main application shell with tab-based navigation
 - **components/**: View components for each CRM entity
   - Pattern: `{Entity}View.tsx` for list views, `{Entity}DetailModal.tsx` for edit modals
-  - Core views: HomeView, AccountsView, ContactsView, OpportunitiesView (via BZPipeline), InvoicesView, LeadsView, QuotesView, TasksView, etc.
+  - Core views: HomeView, AccountsView, ContactsView, InvoicesView, LeadsView, QuotesView, TasksView, etc.
+  - **BZPipeline.tsx**: Special Kanban board component for opportunities with drag-drop stage management
+  - **AssistantPanel.tsx**: AI chat interface that calls `/api/assistant`
+  - **CommandPalette.tsx**: Keyboard shortcut menu (CMD+K)
 - **types.ts**: Shared TypeScript types
+- **data/uiConstants.ts**: Color schemes, currency formatting (PHP), date utilities
 
 ### Database (Prisma)
 - Schema: `prisma/schema.prisma` - PostgreSQL with enums for Stage, AccountType, TaskPriority, InvoiceStatus, etc.
@@ -86,6 +107,39 @@ git config core.hooksPath .githooks
 
 ## Important Patterns
 
+### Error Handling Pattern
+All route handlers use the `asyncHandler` wrapper from `routes/helpers.ts`:
+```typescript
+router.get('/api/accounts', asyncHandler(async (req, res) => {
+  // Any thrown errors or rejected promises automatically caught
+  const accounts = await prisma.account.findMany();
+  res.json(accounts);
+}));
+```
+The `asyncHandler` passes errors to Express error handler middleware, preventing unhandled promise rejections. **Always wrap async route handlers** with this utility.
+
+### Stage Utilities
+Opportunity stages are stored as enums (`ProposalPriceQuote`) but displayed as labels (`"Proposal/Price Quote"`). Use `utils/stageUtils.ts`:
+- `stageEnumToLabel()`: Convert database enum to display string
+- `stageLabelToEnum()`: Convert user input back to enum
+
+Routes automatically serialize opportunities with readable stage labels before sending responses.
+
+### React Component Patterns
+- **List Views**: `{Entity}View.tsx` (e.g., `AccountsView.tsx`, `ContactsView.tsx`)
+  - Fetch data on mount/tab change
+  - Render tables/cards with action buttons
+  - Handle modal open/close state
+- **Edit Modals**: `{Entity}EditModal.tsx` or `{Entity}DetailModal.tsx`
+  - Accept `onClose` callback and optional entity for editing
+  - Submit to API and call `onClose(true)` on success
+  - Parent view refetches data when modal closes with success=true
+
+### Real-Time Updates (SSE)
+- Backend emits events via `events/eventBus.ts` → `eventEmitter.emit('workflow.executed', data)`
+- SSE endpoint `/api/events` streams events to connected clients
+- Frontend components can subscribe to real-time notifications, workflow updates, opportunity changes
+
 ### Vite Proxy Configuration
 - Frontend proxies `/api/*` to backend
 - Docker: targets `http://backend:4000` when `DOCKER_ENV=true`
@@ -101,11 +155,19 @@ git config core.hooksPath .githooks
 - Dockerfile installs OpenSSL for Prisma compatibility: `RUN apk add --no-cache openssl`
 - Build order critical: `prisma:generate` → `build` → `build:server`
 
+### Prisma Client Singleton
+The backend uses a singleton pattern in `server/prismaClient.ts` to prevent connection pool exhaustion during development (hot reload creates new connections). All routes import this shared instance:
+```typescript
+import prisma from '../prismaClient.js';  // Note .js extension for ESM
+```
+
 ### TypeScript Configuration
-- Frontend: `tsconfig.json`
-- Backend: `tsconfig.server.json`
+- Frontend: `tsconfig.json` (React/browser environment)
+- Backend: `tsconfig.server.json` (Node.js/ESM environment)
 - Lint checks both configs: `npm run lint`
-- Backend uses ESM modules (`.js` imports even for `.ts` files)
+- **ESM imports**: Backend uses ES modules with `.js` extensions in imports even for `.ts` source files
+  - Example: `import { foo } from './utils/bar.js'` (bar.ts compiles to bar.js)
+  - This is required for Node.js ESM module resolution
 
 ### API Type Assertions
 When using `fetch().json()` with OpenAI or external APIs, add type assertion to avoid TS18046 errors:
@@ -131,5 +193,21 @@ curl http://localhost:4000/api/events
 3. **TypeScript build fails**: Run `prisma:generate` before `build:server`
 4. **Docker build "file not found"**: Check `.dockerignore` hasn't excluded required files
 
-## Workflow Automation
-Keep `npm run worker:automation` running alongside the API. Workflow triggers (stage changes, task overdue, inactivity) queue jobs in Redis that execute actions (create tasks, send notifications, generate AI insights) asynchronously.
+## Workflow Automation Architecture
+
+The workflow system uses an event-driven architecture to decouple triggers from execution:
+
+### Flow: Trigger → Queue → Worker → Execute → Emit
+1. **Trigger**: API routes detect events (opportunity stage change, task overdue, inactivity)
+2. **Queue**: Event enqueued to BullMQ via `jobs/automationQueue.ts` → `automationQueue.add(jobData)`
+3. **Worker**: `workers/automationWorker.ts` polls Redis and picks up jobs
+4. **Execute**: `services/workflowProcessor.ts` evaluates WorkflowRules and executes WorkflowActions
+5. **Emit**: `events/eventBus.ts` broadcasts real-time updates via SSE to `/api/events`
+
+### Workflow Actions
+- **CREATE_TASK**: Auto-generate follow-up tasks based on stage changes
+- **SEND_EMAIL**: Trigger notifications via nodemailer
+- **INVOKE_AI**: Generate AI insights using GPT-5-nano
+- **CREATE_INVOICE**: Auto-create invoices when opportunities reach "Closed Won"
+
+**Critical**: Keep `npm run worker:automation` running alongside the API server, otherwise queued jobs will accumulate in Redis without being processed.

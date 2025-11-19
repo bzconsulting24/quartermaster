@@ -30,6 +30,12 @@ const ContactsView = () => {
     void loadContacts();
   }, [loadContacts]);
 
+  useEffect(() => {
+    const handler: EventListener = () => setModalState({ mode: 'create' });
+    window.addEventListener('contacts:new', handler);
+    return () => window.removeEventListener('contacts:new', handler);
+  }, []);
+
   const filteredContacts = useMemo(() => {
     return contacts.filter(contact =>
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -224,4 +230,3 @@ const ContactsView = () => {
 };
 
 export default ContactsView;
-
