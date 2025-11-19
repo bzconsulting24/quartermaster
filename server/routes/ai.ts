@@ -223,11 +223,78 @@ router.post(
   })
 );
 
+// Generate lead from natural language prompt
+router.post(
+  '/generate-lead',
+  asyncHandler(async (req, res) => {
+    const { prompt } = req.body;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({ message: 'OpenAI API key not configured' });
+    }
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ message: 'Prompt is required' });
+    }
+
+    try {
+      const systemPrompt = `You are a lead generation assistant. Extract or generate lead information from the user's request. Return strict JSON with this schema:
+{
+  "name": "string (lead/contact name)",
+  "company": "string (company name, optional)",
+  "email": "string (optional)",
+  "phone": "string (optional)",
+  "source": "string (optional, e.g., LinkedIn, Website, Referral)",
+  "owner": "string (optional, sales rep/owner)",
+  "notes": "string (optional)",
+  "score": number (0-100, optional lead score based on quality/interest),
+  "companyName": "string (for matching to existing accounts, optional)"
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-nano',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_completion_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = (await response.json()) as any;
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No response from AI');
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error('AI generation error:', error);
+      res.status(500).json({ message: 'Failed to generate lead', error: String(error) });
+    }
+  })
+);
+
 // Extract information from text/email
 router.post(
   '/extract',
   asyncHandler(async (req, res) => {
-    const { text, type } = req.body; // type: 'invoice' or 'estimate'
+    const { text, type } = req.body; // type: 'invoice', 'estimate', or 'lead'
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -238,10 +305,24 @@ router.post(
       return res.status(400).json({ message: 'Text is required' });
     }
 
-    const docType = type === 'estimate' ? 'estimate/quote' : 'invoice';
+    let systemPrompt: string;
 
-    try {
-      const systemPrompt = `You are a document extraction assistant. Extract ${docType} information from the provided text. Return strict JSON with this schema:
+    if (type === 'lead') {
+      systemPrompt = `You are a lead extraction assistant. Extract lead/contact information from the provided text. Return strict JSON with this schema:
+{
+  "name": "string (lead/contact name)",
+  "company": "string (company name, optional)",
+  "email": "string (optional)",
+  "phone": "string (optional)",
+  "source": "string (optional, e.g., LinkedIn, Website, Referral)",
+  "owner": "string (optional, sales rep/owner)",
+  "notes": "string (optional)",
+  "score": number (0-100, optional lead score based on quality/interest),
+  "companyName": "string (for matching to existing accounts, optional)"
+}`;
+    } else {
+      const docType = type === 'estimate' ? 'estimate/quote' : 'invoice';
+      systemPrompt = `You are a document extraction assistant. Extract ${docType} information from the provided text. Return strict JSON with this schema:
 {
   "customerName": "string (optional)",
   "items": [{ "description": "string", "quantity": number, ${type === 'estimate' ? '"unitPrice": number, "discount": number' : '"rate": number'} }],
@@ -251,6 +332,11 @@ router.post(
   "expiresAt": "ISO date string (optional, for estimates)",
   "notes": "string (optional)"
 }`;
+    }
+
+    const docType = type === 'lead' ? 'lead' : (type === 'estimate' ? 'estimate/quote' : 'invoice');
+
+    try {
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
