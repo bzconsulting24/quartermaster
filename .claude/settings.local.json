@@ -19,7 +19,11 @@
       "Bash(curl:*)",
       "Bash(cat:*)",
       "Bash(node -e:*)",
-      "Bash(.env)"
+      "Bash(.env)",
+      "Bash(git remote set-url:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(docker restart:*)"
     ],
     "deny": [],
     "ask": []
