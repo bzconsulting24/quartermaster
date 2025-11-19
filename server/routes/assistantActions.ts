@@ -111,7 +111,7 @@ async function openAIPlan(prompt: string) {
   const mem = getMemory(20).map((m) => `- ${m.text}`).join('\n');
   const sys = 'You are a CRM assistant. Output only JSON. Schema: { actions: Array<Action> } where Action is one of: { type:"update", entity, where:{ id?:number, match?:object }, data:object, reason?:string } | { type:"create", entity, data:object, reason?:string }. Entities: account, contact, lead, opportunity, task, estimate, invoice. Use at most 25 actions. Do not delete.';
   const body: any = {
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-nano',
     messages: [
       { role: 'system', content: sys },
       { role: 'user', content: `Memory:\n${mem}\n\nInstruction:\n${prompt}` }
