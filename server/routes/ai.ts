@@ -239,17 +239,18 @@ router.post(
     }
 
     try {
-      const systemPrompt = `You are a lead generation assistant. Extract or generate lead information from the user's request. Return strict JSON with this schema:
+      const systemPrompt = `You are a lead generation assistant. Extract or generate lead information from the user's request.
+Return ONLY valid JSON in this exact format (use null for missing fields):
 {
-  "name": "string (lead/contact name)",
-  "company": "string (company name, optional)",
-  "email": "string (optional)",
-  "phone": "string (optional)",
-  "source": "string (optional, e.g., LinkedIn, Website, Referral)",
-  "owner": "string (optional, sales rep/owner)",
-  "notes": "string (optional)",
-  "score": number (0-100, optional lead score based on quality/interest),
-  "companyName": "string (for matching to existing accounts, optional)"
+  "name": "string",
+  "company": "string or null",
+  "email": "string or null",
+  "phone": "string or null",
+  "source": "string or null",
+  "owner": "string or null",
+  "notes": "string or null",
+  "score": number or null,
+  "companyName": "string or null"
 }`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -271,7 +272,9 @@ router.post(
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenAI API error details:', errorData);
+        throw new Error(`OpenAI API error: ${response.status} - ${JSON.stringify(errorData)}`);
       }
 
       const data = (await response.json()) as any;
@@ -308,17 +311,18 @@ router.post(
     let systemPrompt: string;
 
     if (type === 'lead') {
-      systemPrompt = `You are a lead extraction assistant. Extract lead/contact information from the provided text. Return strict JSON with this schema:
+      systemPrompt = `You are a lead extraction assistant. Extract lead/contact information from the provided text.
+Return ONLY valid JSON in this exact format (use null for missing fields):
 {
-  "name": "string (lead/contact name)",
-  "company": "string (company name, optional)",
-  "email": "string (optional)",
-  "phone": "string (optional)",
-  "source": "string (optional, e.g., LinkedIn, Website, Referral)",
-  "owner": "string (optional, sales rep/owner)",
-  "notes": "string (optional)",
-  "score": number (0-100, optional lead score based on quality/interest),
-  "companyName": "string (for matching to existing accounts, optional)"
+  "name": "string",
+  "company": "string or null",
+  "email": "string or null",
+  "phone": "string or null",
+  "source": "string or null",
+  "owner": "string or null",
+  "notes": "string or null",
+  "score": number or null,
+  "companyName": "string or null"
 }`;
     } else {
       const docType = type === 'estimate' ? 'estimate/quote' : 'invoice';
@@ -357,7 +361,9 @@ router.post(
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenAI API error details:', errorData);
+        throw new Error(`OpenAI API error: ${response.status} - ${JSON.stringify(errorData)}`);
       }
 
       const data = (await response.json()) as any;
