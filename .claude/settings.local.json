@@ -23,7 +23,11 @@
       "Bash(git remote set-url:*)",
       "Bash(npm run build:*)",
       "Bash(npx prisma generate:*)",
-      "Bash(docker restart:*)"
+      "Bash(docker restart:*)",
+      "Bash(gh run list:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git fetch:*)",
+      "Bash(git check-ignore:*)"
     ],
     "deny": [],
     "ask": []
