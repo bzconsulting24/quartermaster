@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Sparkles, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { COLORS } from "../data/uiConstants";
 import type { AccountRecord } from "../types";
 
@@ -20,8 +21,91 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // AI Assistant state
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [showAiAssistant, setShowAiAssistant] = useState(true);
+
   const fields = [ 'name', 'industry', 'type', 'revenue', 'owner', 'phone', 'website', 'location' ];
   const accountTypes = ['Enterprise', 'MidMarket', 'SMB'];
+
+  // AI Auto-Generate Account
+  const handleAutoGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      setError('Please enter a prompt for AI to generate the account');
+      return;
+    }
+
+    setAiGenerating(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/ai/generate-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt })
+      });
+
+      if (!response.ok) throw new Error('AI generation failed');
+
+      const data = await response.json();
+
+      // Populate form with AI-generated data
+      if (data.name) setForm((p: any) => ({ ...p, name: data.name }));
+      if (data.industry) setForm((p: any) => ({ ...p, industry: data.industry }));
+      if (data.type) setForm((p: any) => ({ ...p, type: data.type }));
+      if (data.revenue) setForm((p: any) => ({ ...p, revenue: data.revenue }));
+      if (data.owner) setForm((p: any) => ({ ...p, owner: data.owner }));
+      if (data.phone) setForm((p: any) => ({ ...p, phone: data.phone }));
+      if (data.website) setForm((p: any) => ({ ...p, website: data.website }));
+      if (data.location) setForm((p: any) => ({ ...p, location: data.location }));
+
+      setAiPrompt('');
+    } catch (error) {
+      console.error('AI generation error:', error);
+      setError('Failed to generate account with AI');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  // AI Parse Text
+  const handleParseText = async () => {
+    if (!aiPrompt.trim()) {
+      setError('Please paste company information to extract details');
+      return;
+    }
+
+    setAiGenerating(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/ai/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: aiPrompt, type: 'account' })
+      });
+
+      if (!response.ok) throw new Error('Text parsing failed');
+
+      const data = await response.json();
+
+      // Populate form with extracted data
+      if (data.name) setForm((p: any) => ({ ...p, name: data.name }));
+      if (data.industry) setForm((p: any) => ({ ...p, industry: data.industry }));
+      if (data.type) setForm((p: any) => ({ ...p, type: data.type }));
+      if (data.revenue) setForm((p: any) => ({ ...p, revenue: data.revenue }));
+      if (data.owner) setForm((p: any) => ({ ...p, owner: data.owner }));
+      if (data.phone) setForm((p: any) => ({ ...p, phone: data.phone }));
+      if (data.website) setForm((p: any) => ({ ...p, website: data.website }));
+      if (data.location) setForm((p: any) => ({ ...p, location: data.location }));
+
+      setAiPrompt('');
+    } catch (error) {
+      console.error('Parse error:', error);
+      setError('Failed to parse text. Please try again or enter details manually.');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const magicFill = async () => {
     if (!notes.trim() && !file) {
@@ -78,6 +162,123 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
         </div>
+
+        {/* AI Account Assistant */}
+        {!isEditing && (
+          <div style={{
+            marginBottom: 16,
+            border: '2px solid #3B82F6',
+            borderRadius: 12,
+            padding: 16,
+            background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)'
+          }}>
+            <div
+              onClick={() => setShowAiAssistant(!showAiAssistant)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                marginBottom: showAiAssistant ? 12 : 0
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Sparkles size={18} color="#3B82F6" />
+                <h3 style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: '#1E40AF',
+                  margin: 0
+                }}>
+                  AI Account Assistant
+                </h3>
+              </div>
+              {showAiAssistant ? (
+                <ChevronUp size={18} color="#3B82F6" />
+              ) : (
+                <ChevronDown size={18} color="#3B82F6" />
+              )}
+            </div>
+
+            {showAiAssistant && (
+              <>
+                <p style={{
+                  fontSize: 12,
+                  color: '#1E40AF',
+                  marginBottom: 10,
+                  lineHeight: 1.4
+                }}>
+                  Let AI generate account details from a description, or paste company information to extract details.
+                </p>
+                <textarea
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  placeholder="Example: 'TechCorp Inc. is an enterprise software company in Silicon Valley. Revenue: $50M, 200 employees, technology industry. Contact: John Doe, sales@techcorp.com, +1-555-0100' or paste company profile"
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #93C5FD',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    resize: 'vertical',
+                    marginBottom: 10,
+                    background: 'white'
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={handleAutoGenerate}
+                    disabled={aiGenerating}
+                    style={{
+                      flex: 1,
+                      padding: '8px 14px',
+                      background: '#3B82F6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: aiGenerating ? 'not-allowed' : 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      opacity: aiGenerating ? 0.6 : 1
+                    }}
+                  >
+                    <Sparkles size={14} />
+                    {aiGenerating ? 'Generating...' : 'Auto-Generate'}
+                  </button>
+                  <button
+                    onClick={handleParseText}
+                    disabled={aiGenerating}
+                    style={{
+                      flex: 1,
+                      padding: '8px 14px',
+                      background: '#60A5FA',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      cursor: aiGenerating ? 'not-allowed' : 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      opacity: aiGenerating ? 0.6 : 1
+                    }}
+                  >
+                    <FileText size={14} />
+                    {aiGenerating ? 'Parsing...' : 'Parse Text'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {/* Account Name */}
           <div>
