@@ -37,7 +37,35 @@ router.post(
       return res.status(400).json({ message: 'name is required' });
     }
 
-    // Create the lead first
+    // Auto-create account if company is provided but no accountId
+    let finalAccountId = accountId;
+    if (!accountId && company) {
+      try {
+        // Check if account with this company name already exists
+        const existingAccount = await prisma.account.findFirst({
+          where: { name: { equals: company, mode: 'insensitive' } }
+        });
+
+        if (existingAccount) {
+          finalAccountId = existingAccount.id;
+        } else {
+          // Create new account
+          const newAccount = await prisma.account.create({
+            data: {
+              name: company,
+              type: 'SMB', // Default to SMB, can be updated later
+              owner: owner || null,
+              phone: phone || null
+            }
+          });
+          finalAccountId = newAccount.id;
+        }
+      } catch (error) {
+        console.error('Failed to auto-create account:', error);
+      }
+    }
+
+    // Create the lead
     const lead = await prisma.lead.create({
       data: {
         name,
@@ -49,13 +77,13 @@ router.post(
         owner,
         score,
         notes,
-        accountId
+        accountId: finalAccountId
       }
     });
 
     // Auto-create opportunity in pipeline (Prospecting stage)
-    // Only if accountId is provided
-    if (accountId) {
+    // Only if account exists (either provided or auto-created)
+    if (finalAccountId) {
       try {
         const opportunity = await prisma.opportunity.create({
           data: {
@@ -67,7 +95,7 @@ router.post(
             stage: 'Prospecting', // Start in first stage
             email,
             phone,
-            accountId,
+            accountId: finalAccountId,
             leadId: lead.id
           },
           include: {
