@@ -59,13 +59,13 @@ async function draftWithOpenAI(kind: 'quote'|'invoice', content: string) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-nano',
         messages: [
           { role: 'system', content: 'You extract billing line items. Always respond with JSON only.' },
           { role: 'user', content: prompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0, max_tokens: 600
+        temperature: 0, max_completion_tokens: 600
       })
     });
     if (!res.ok) return null;
@@ -120,13 +120,13 @@ router.post(
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-nano',
         messages: [
           { role: 'system', content: 'You extract forms. Always respond with JSON only.' },
           { role: 'user', content: prompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0, max_tokens: 600
+        temperature: 0, max_completion_tokens: 600
       })
     });
     const data = (await r.json()) as any;
