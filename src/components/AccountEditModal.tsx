@@ -8,6 +8,8 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
   const [form, setForm] = useState<any>({
     name: account?.name ?? '',
     industry: account?.industry ?? '',
+    type: account?.type ?? 'Enterprise',
+    revenue: account?.revenue ?? '',
     owner: account?.owner ?? '',
     phone: account?.phone ?? '',
     website: account?.website ?? '',
@@ -18,7 +20,8 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fields = [ 'name', 'industry', 'owner', 'phone', 'website', 'location' ];
+  const fields = [ 'name', 'industry', 'type', 'revenue', 'owner', 'phone', 'website', 'location' ];
+  const accountTypes = ['Enterprise', 'MidMarket', 'SMB'];
 
   const magicFill = async () => {
     if (!notes.trim() && !file) {
@@ -76,12 +79,97 @@ export default function AccountEditModal({ account, onClose, onSaved }: { accoun
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          {fields.map((k)=> (
-            <div key={k}>
-              <label style={{ fontSize: 12, color: '#6B7280' }}>{k[0].toUpperCase()+k.slice(1)}</label>
-              <input value={form[k]} onChange={(e)=> setForm((p:any)=> ({ ...p, [k]: e.target.value }))} style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }} />
-            </div>
-          ))}
+          {/* Account Name */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Account Name *</label>
+            <input
+              value={form.name}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, name: e.target.value }))}
+              placeholder="Enter account name"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
+
+          {/* Industry */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Industry</label>
+            <input
+              value={form.industry}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, industry: e.target.value }))}
+              placeholder="e.g., Technology, Healthcare"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
+
+          {/* Type */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Type</label>
+            <select
+              value={form.type}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, type: e.target.value }))}
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6, cursor: 'pointer' }}
+            >
+              <option value="Enterprise">Enterprise</option>
+              <option value="MidMarket">Mid-Market</option>
+              <option value="SMB">SMB</option>
+            </select>
+          </div>
+
+          {/* Revenue */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Revenue</label>
+            <input
+              type="number"
+              value={form.revenue}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, revenue: e.target.value ? parseInt(e.target.value) : '' }))}
+              placeholder="Annual revenue"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
+
+          {/* Location */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Location</label>
+            <input
+              value={form.location}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, location: e.target.value }))}
+              placeholder="City, State/Country"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
+
+          {/* Account Owner */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Account Owner</label>
+            <input
+              value={form.owner}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, owner: e.target.value }))}
+              placeholder="Owner name"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Phone</label>
+            <input
+              value={form.phone}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, phone: e.target.value }))}
+              placeholder="+1 (555) 123-4567"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
+
+          {/* Website */}
+          <div>
+            <label style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Website</label>
+            <input
+              value={form.website}
+              onChange={(e)=> setForm((p:any)=> ({ ...p, website: e.target.value }))}
+              placeholder="https://example.com"
+              style={{ width: '100%', padding: 10, border: '1px solid #E5E7EB', borderRadius: 6 }}
+            />
+          </div>
         </div>
         <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
