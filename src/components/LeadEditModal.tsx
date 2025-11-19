@@ -207,6 +207,26 @@ export default function LeadEditModal({ lead, onClose, onSaved }: LeadEditModalP
     }
   };
 
+  const deleteLead = async () => {
+    if (!lead) return;
+    if (!confirm(`Delete lead "${lead.name}"? This will also remove the associated opportunity from the pipeline.`)) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error('Unable to delete lead');
+      }
+      onSaved(lead); // Trigger refresh
+      onClose();
+    } catch (e: any) {
+      setError(e.message || 'Unable to delete lead');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 80 }} onClick={onClose}>
       <div
@@ -460,21 +480,34 @@ export default function LeadEditModal({ lead, onClose, onSaved }: LeadEditModalP
 
         {error && <div style={{ color: '#B91C1C' }}>{error}</div>}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button
-            onClick={onClose}
-            disabled={loading}
-            style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={save}
-            disabled={loading}
-            style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: COLORS.navyDark, color: 'white', cursor: 'pointer' }}
-          >
-            {loading ? 'Saving…' : lead ? 'Save Lead' : 'Create Lead'}
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+          <div>
+            {lead && (
+              <button
+                onClick={deleteLead}
+                disabled={loading}
+                style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #EF4444', background: 'white', color: '#EF4444', cursor: 'pointer' }}
+              >
+                Delete Lead
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={onClose}
+              disabled={loading}
+              style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={save}
+              disabled={loading}
+              style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: COLORS.navyDark, color: 'white', cursor: 'pointer' }}
+            >
+              {loading ? 'Saving…' : lead ? 'Save Lead' : 'Create Lead'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

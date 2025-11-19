@@ -137,6 +137,20 @@ router.delete(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
+
+    // First, delete the associated opportunity if it exists
+    const lead = await prisma.lead.findUnique({
+      where: { id },
+      include: { opportunity: true }
+    });
+
+    if (lead?.opportunity) {
+      await prisma.opportunity.delete({
+        where: { id: lead.opportunity.id }
+      });
+    }
+
+    // Then delete the lead
     await prisma.lead.delete({ where: { id } });
     res.status(204).send();
   })
