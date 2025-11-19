@@ -358,11 +358,78 @@ Return ONLY valid JSON in this exact format (use null for missing fields):
   })
 );
 
+// Generate contact from natural language prompt
+router.post(
+  '/generate-contact',
+  asyncHandler(async (req, res) => {
+    const { prompt } = req.body;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(503).json({ message: 'OpenAI API key not configured' });
+    }
+
+    if (!prompt || typeof prompt !== 'string') {
+      return res.status(400).json({ message: 'Prompt is required' });
+    }
+
+    try {
+      const systemPrompt = `You are a contact generation assistant. Extract or generate contact/person information from the user's request.
+Return ONLY valid JSON in this exact format (use null for missing fields):
+{
+  "name": "string",
+  "title": "string or null",
+  "email": "string or null",
+  "phone": "string or null",
+  "owner": "string or null",
+  "lastContact": "ISO date string or null",
+  "companyName": "string or null"
+}`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-nano',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          response_format: { type: 'json_object' },
+          max_completion_tokens: 1000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('OpenAI API error details:', errorData);
+        throw new Error(`OpenAI API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
+
+      const data = (await response.json()) as any;
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No response from AI');
+      }
+
+      const parsed = JSON.parse(content);
+      res.json(parsed);
+    } catch (error) {
+      console.error('AI generation error:', error);
+      res.status(500).json({ message: 'Failed to generate contact', error: String(error) });
+    }
+  })
+);
+
 // Extract information from text/email
 router.post(
   '/extract',
   asyncHandler(async (req, res) => {
-    const { text, type } = req.body; // type: 'invoice', 'estimate', 'lead', or 'account'
+    const { text, type } = req.body; // type: 'invoice', 'estimate', 'lead', 'account', or 'contact'
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -402,6 +469,18 @@ Return ONLY valid JSON in this exact format (use null for missing fields):
   "website": "string or null",
   "location": "string or null"
 }`;
+    } else if (type === 'contact') {
+      systemPrompt = `You are a contact extraction assistant. Extract contact/person information from the provided text.
+Return ONLY valid JSON in this exact format (use null for missing fields):
+{
+  "name": "string",
+  "title": "string or null",
+  "email": "string or null",
+  "phone": "string or null",
+  "owner": "string or null",
+  "lastContact": "ISO date string or null",
+  "companyName": "string or null"
+}`;
     } else {
       const docType = type === 'estimate' ? 'estimate/quote' : 'invoice';
       systemPrompt = `You are a document extraction assistant. Extract ${docType} information from the provided text. Return strict JSON with this schema:
@@ -416,7 +495,7 @@ Return ONLY valid JSON in this exact format (use null for missing fields):
 }`;
     }
 
-    const docType = type === 'lead' ? 'lead' : (type === 'account' ? 'account' : (type === 'estimate' ? 'estimate/quote' : 'invoice'));
+    const docType = type === 'lead' ? 'lead' : (type === 'account' ? 'account' : (type === 'contact' ? 'contact' : (type === 'estimate' ? 'estimate/quote' : 'invoice')));
 
     try {
 
