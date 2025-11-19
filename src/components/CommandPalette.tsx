@@ -20,6 +20,7 @@ const actionItems = [
   { label: 'Go to: Pipeline', action: (nav: (t: string)=>void) => nav('pipeline') },
   { label: 'Go to: Accounts', action: (nav: (t: string)=>void) => nav('accounts') },
   { label: 'Go to: Contacts', action: (nav: (t: string)=>void) => nav('contacts') },
+  { label: 'Go to: Customer Information', action: (nav: (t: string)=>void) => nav('customerInformation') },
   { label: 'Go to: Tasks', action: (nav: (t: string)=>void) => nav('tasks') },
   { label: 'Go to: Reports', action: (nav: (t: string)=>void) => nav('reports') }
 ];
@@ -163,4 +164,3 @@ export default function CommandPalette({ open, onClose, onNavigate, onCreateTask
     </div>
   );
 }
-

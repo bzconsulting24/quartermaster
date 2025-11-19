@@ -9,7 +9,8 @@ import {
   FileText,
   UserPlus,
   ScrollText,
-  FileSignature
+  FileSignature,
+  UserCircle2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { COLORS } from '../data/uiConstants';
@@ -31,9 +32,10 @@ const tabs: TabConfig[] = [
   { id: 'opportunities', label: 'Opportunities', icon: Briefcase },
   { id: 'accounts', label: 'Accounts', icon: Users },
   { id: 'contacts', label: 'Contacts', icon: Users },
+  { id: 'customerInformation', label: 'Customer Information', icon: UserCircle2 },
   { id: 'leads', label: 'Leads', icon: UserPlus },
-  { id: 'invoices', label: 'Invoices', icon: FileText },
   { id: 'estimates', label: 'Estimates', icon: ScrollText },
+  { id: 'invoices', label: 'Invoices', icon: FileText },
   { id: 'contracts', label: 'Contracts', icon: FileSignature },
   { id: 'tasks', label: 'Tasks', icon: CheckSquare },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
@@ -96,4 +98,3 @@ const NavigationTabs = ({ currentTab, setCurrentTab }: NavigationTabsProps) => (
 );
 
 export default NavigationTabs;
-
