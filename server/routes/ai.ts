@@ -69,7 +69,7 @@ async function draftWithOpenAI(kind: 'quote'|'invoice', content: string) {
       })
     });
     if (!res.ok) return null;
-    const data = await res.json();
+    const data = (await res.json()) as any;
     const text = data.choices?.[0]?.message?.content ?? '';
     const parsed = JSON.parse(text);
     if (!Array.isArray(parsed.lines)) return null;
@@ -129,12 +129,11 @@ router.post(
         temperature: 0, max_tokens: 600
       })
     });
-    const data = await r.json();
+    const data = (await r.json()) as any;
     const textOut = data.choices?.[0]?.message?.content ?? '{}';
     let parsed: any = {};
     try { parsed = JSON.parse(textOut); } catch {}
     res.json({ data: parsed });
   })
 );
-
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search, Filter, PlusCircle, Mail, PhoneCall, Star } from 'lucide-react';
 import { COLORS, formatDisplayDate } from '../data/uiConstants';
 import LeadEditModal from './LeadEditModal';
@@ -11,27 +11,27 @@ const LeadsView = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [loading, setLoading] = useState(true);
-  const [showEdit, setShowEdit] = useState<null | LeadRecord>(null);
+  const [modalState, setModalState] = useState<{ mode: 'create' | 'edit'; lead?: LeadRecord } | null>(null);
+
+  const loadLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/leads');
+      if (!response.ok) {
+        throw new Error('Unable to load leads');
+      }
+      const data = await response.json();
+      setLeads(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadLeads = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/leads');
-        if (!response.ok) {
-          throw new Error('Unable to load leads');
-        }
-        const data = await response.json();
-        setLeads(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLeads();
-  }, []);
+    void loadLeads();
+  }, [loadLeads]);
 
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
@@ -51,6 +51,7 @@ const LeadsView = () => {
           <p style={{ fontSize: '14px', color: '#6B7280' }}>{loading ? 'Loading...' : `${filteredLeads.length} leads`}</p>
         </div>
         <button
+          onClick={() => setModalState({ mode: 'create' })}
           style={{
             padding: '10px 20px',
             background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
@@ -161,8 +162,10 @@ const LeadsView = () => {
               borderRadius: '8px',
               padding: '20px',
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              border: `1px solid ${COLORS.navyLight}10`
+              border: `1px solid ${COLORS.navyLight}10`,
+              cursor: 'pointer'
             }}
+            onClick={() => setModalState({ mode: 'edit', lead })}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div>
@@ -208,11 +211,18 @@ const LeadsView = () => {
           </div>
         ))}
       </div>
+      {modalState && (
+        <LeadEditModal
+          lead={modalState.mode === 'edit' ? modalState.lead : undefined}
+          onClose={() => setModalState(null)}
+          onSaved={() => {
+            setModalState(null);
+            void loadLeads();
+          }}
+        />
+      )}
     </div>
   );
 };
 
 export default LeadsView;
-
-
-

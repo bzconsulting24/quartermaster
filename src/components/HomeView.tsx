@@ -88,6 +88,68 @@ const HomeView = () => {
     { label: 'Risk Alerts', value: metrics.riskAlerts.toString(), subtext: 'AI-flagged risks', color: '#EF4444' }
   ];
 
+  const quickActions = [
+    { label: 'New Opportunity', icon: Briefcase },
+    { label: 'Add Contact', icon: Users },
+    { label: 'Schedule Meeting', icon: Calendar },
+    { label: 'Create Task', icon: CheckSquare }
+  ];
+
+  const runQuickAction = async (label: string) => {
+    if (label === 'New Opportunity') {
+      const name = prompt('Opportunity name?');
+      const accountIdRaw = prompt('Account ID?');
+      const amountRaw = prompt('Amount?');
+      const accountId = accountIdRaw ? parseInt(accountIdRaw, 10) : NaN;
+      const amount = amountRaw ? parseInt(amountRaw, 10) : 0;
+      const closeDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
+      if (name && Number.isFinite(accountId)) {
+        await fetch('/api/opportunities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, amount, closeDate, accountId, owner: 'Me' })
+        });
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'opportunities' } }));
+      }
+      return;
+    }
+    if (label === 'Add Contact') {
+      const name = prompt('Contact name?');
+      const email = prompt('Email?');
+      const accountIdRaw = prompt('Account ID?');
+      const accountId = accountIdRaw ? parseInt(accountIdRaw, 10) : NaN;
+      if (name && email && Number.isFinite(accountId)) {
+        await fetch('/api/contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, accountId })
+        });
+        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'contacts' } }));
+      }
+      return;
+    }
+    if (label === 'Schedule Meeting') {
+      await fetch('/api/activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'MEETING', subject: 'Scheduled meeting', performedBy: 'user' })
+      });
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'calendar' } }));
+      return;
+    }
+    if (label === 'Create Task') {
+      const title = prompt('Task title?');
+      if (!title) return;
+      const dueDate = new Date(Date.now() + 86400000).toISOString();
+      await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, dueDate, assignedTo: 'Me' })
+      });
+      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'tasks' } }));
+    }
+  };
+
   return (
     <div style={{ padding: '24px', background: '#F9FAFB', minHeight: '100%' }}>
       <div style={{ marginBottom: '24px' }}>
@@ -109,7 +171,6 @@ const HomeView = () => {
         {automationStats.map((stat, idx) => (
           <div
             key={idx}
-                    onClick={async () => { if (action.label==='New Opportunity') { const name=prompt('Opportunity name?'); const accountIdRaw=prompt('Account ID?'); const accountId=accountIdRaw?parseInt(accountIdRaw):NaN; const amountRaw=prompt('Amount?'); const amount=amountRaw?parseInt(amountRaw):0; const closeDate=new Date(Date.now()+1000*60*60*24*30).toISOString(); if(name && Number.isFinite(accountId)){ await fetch('/api/opportunities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, amount, closeDate, accountId, owner:'Me' })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'opportunities' }})); } } else if (action.label==='Add Contact') { const name=prompt('Contact name?'); const email=prompt('Email?'); const accountIdRaw=prompt('Account ID?'); const accountId=accountIdRaw?parseInt(accountIdRaw):NaN; if(name && email && Number.isFinite(accountId)){ await fetch('/api/contacts',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name, email, accountId })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'contacts' }})); } } else if (action.label==='Schedule Meeting') { await fetch('/api/activities',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'MEETING', subject:'Scheduled meeting', performedBy:'user' })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'calendar' }})); } else if (action.label==='Create Task') { const title=prompt('Task title?'); if(!title) return; const dueDate=new Date(Date.now()+86400000).toISOString(); await fetch('/api/tasks',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title, dueDate, assignedTo:'Me' })}); window.dispatchEvent(new CustomEvent('app:navigate',{ detail:{ tab:'tasks' }})); } }}
                     style={{
               background: 'white',
               padding: '20px',
@@ -249,17 +310,12 @@ const HomeView = () => {
               Quick Actions
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { label: 'New Opportunity', icon: Briefcase },
-                { label: 'Add Contact', icon: Users },
-                { label: 'Schedule Meeting', icon: Calendar },
-                { label: 'Create Task', icon: CheckSquare },
-              ].map((action, idx) => {
+              {quickActions.map((action, idx) => {
                 const Icon = action.icon;
                 return (
                   <button
                     key={idx}
-
+                    onClick={() => runQuickAction(action.label)}
                     style={{
                       padding: '12px 16px',
                       background: 'white',
@@ -375,7 +431,6 @@ const HomeView = () => {
 };
 
 export default HomeView;
-
 
 
 

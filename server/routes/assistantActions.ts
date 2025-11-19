@@ -125,7 +125,7 @@ async function openAIPlan(prompt: string) {
     body: JSON.stringify(body)
   });
   if (!r.ok) return null;
-  const j = await r.json();
+  const j = (await r.json()) as any;
   const text = j.choices?.[0]?.message?.content ?? '{}';
   try { return JSON.parse(text); } catch { return null; }
 }
