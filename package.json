@@ -38,6 +38,11 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/pdfkit": "^0.17.3",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.0",

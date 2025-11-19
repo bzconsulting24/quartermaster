@@ -9,8 +9,8 @@ RUN npm ci
 # Copy workspace
 COPY . .
 
-# Build client & server, generate Prisma client
-RUN npm run build && npm run build:server && npm run prisma:generate
+# Generate Prisma client first, then build client & server
+RUN npm run prisma:generate && npm run build && npm run build:server
 
 # Remove devDependencies for smaller runtime image
 RUN npm prune --omit=dev
