@@ -65,7 +65,7 @@ async function draftWithOpenAI(kind: 'quote'|'invoice', content: string) {
           { role: 'user', content: prompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0, max_completion_tokens: 600
+        max_completion_tokens: 600
       })
     });
     if (!res.ok) return null;
@@ -135,7 +135,6 @@ router.post(
             { role: 'user', content: prompt }
           ],
           response_format: { type: 'json_object' },
-          temperature: 0.7,
           max_completion_tokens: 1000
         })
       });
@@ -198,7 +197,6 @@ router.post(
             { role: 'user', content: prompt }
           ],
           response_format: { type: 'json_object' },
-          temperature: 0.7,
           max_completion_tokens: 1000
         })
       });
@@ -266,7 +264,6 @@ Return ONLY valid JSON in this exact format (use null for missing fields):
             { role: 'user', content: prompt }
           ],
           response_format: { type: 'json_object' },
-          temperature: 0.7,
           max_completion_tokens: 1000
         })
       });
@@ -355,7 +352,6 @@ Return ONLY valid JSON in this exact format (use null for missing fields):
             { role: 'user', content: `Extract ${docType} information from this text:\n\n${text}` }
           ],
           response_format: { type: 'json_object' },
-          temperature: 0,
           max_completion_tokens: 1000
         })
       });
@@ -411,7 +407,7 @@ router.post(
           { role: 'user', content: prompt }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0, max_completion_tokens: 600
+        max_completion_tokens: 600
       })
     });
     const data = (await r.json()) as any;
