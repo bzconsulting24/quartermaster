@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileText, Filter, Send, Repeat } from 'lucide-react';
+import { FileText, Filter, Send, Repeat, Plus } from 'lucide-react';
 import { COLORS, formatCurrency, formatDisplayDate } from '../data/uiConstants';
 import AIAssistModal from './AIAssistModal';
 import EstimateDetailModal from './EstimateDetailModal';
+import QuoteEditModal from './QuoteEditModal';
 import type { QuoteRecord, QuoteStatus } from '../types';
 
 const statuses: QuoteStatus[] = ['DRAFT', 'SENT', 'ACCEPTED', 'DECLINED'];
@@ -13,6 +14,8 @@ const QuotesView = () => {
   const [loading, setLoading] = useState(true);
   const [showAIModal, setShowAIModal] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editQuote, setEditQuote] = useState<QuoteRecord | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -65,7 +68,8 @@ const QuotesView = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button onClick={() => setShowAIModal(true)} style={{ padding: '10px 12px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>AI Draft</button>
+          <button onClick={() => setShowCreate(true)} style={{ padding: '10px 20px', background: COLORS.navyDark, color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={16} /> New Estimate</button>
+          <button onClick={() => setShowAIModal(true)} style={{ padding: '10px 12px', background: '#7C3AED', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>AI Draft</button>
           <button
             onClick={async () => {
               await fetch('/api/drive/export/estimates/csv', { method: 'POST' });
@@ -200,6 +204,9 @@ const QuotesView = () => {
                     </td>
                     <td style={{ padding: '16px', color: '#6B7280' }}>{quote.opportunity?.name ?? '-'}</td>
                     <td style={{ padding: '16px' }} onClick={(e) => e.stopPropagation()}>
+                      <button title="Edit Estimate" onClick={() => setEditQuote(quote)} style={{ marginRight: 8, padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}>
+                        Edit
+                      </button>
                       <button title="Send Estimate" onClick={() => void sendEstimate(quote.id)} style={{ marginRight: 8, padding: '6px 10px', borderRadius: 6, border: '1px solid #E5E7EB', background: 'white', cursor: 'pointer' }}>
                         <Send size={14} style={{ verticalAlign: 'middle' }} />
                       </button>
@@ -241,6 +248,27 @@ const QuotesView = () => {
 
       {selectedId !== null && (
         <EstimateDetailModal id={selectedId} onClose={() => setSelectedId(null)} onChanged={() => void load()} />
+      )}
+
+      {showCreate && (
+        <QuoteEditModal
+          onClose={() => setShowCreate(false)}
+          onSaved={() => {
+            setShowCreate(false);
+            void load();
+          }}
+        />
+      )}
+
+      {editQuote && (
+        <QuoteEditModal
+          quote={editQuote}
+          onClose={() => setEditQuote(null)}
+          onSaved={() => {
+            setEditQuote(null);
+            void load();
+          }}
+        />
       )}
     </div>
   );

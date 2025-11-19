@@ -1,42 +1,44 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, X, FileText, Upload, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import type { InvoiceRecord, AccountRecord } from '../types';
+import { Plus, Trash2, X, FileText, Upload, Percent, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import type { QuoteRecord, AccountRecord, OpportunityRecord } from '../types';
 import { COLORS, formatCurrency, formatDisplayDate } from '../data/uiConstants';
 
 interface LineItem {
   id?: number;
   description: string;
   quantity: number;
-  rate: number;
+  unitPrice: number;
+  discount: number;
 }
 
-interface InvoiceEditModalProps {
-  invoice?: InvoiceRecord;
+interface QuoteEditModalProps {
+  quote?: QuoteRecord;
   onClose: () => void;
-  onSaved?: (invoice: InvoiceRecord) => void;
+  onSaved?: (quote: QuoteRecord) => void;
 }
 
-export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceEditModalProps) {
-  const isEditing = !!invoice;
+export default function QuoteEditModal({ quote, onClose, onSaved }: QuoteEditModalProps) {
+  const isEditing = !!quote;
 
   // Form fields
-  const [invoiceNumber, setInvoiceNumber] = useState(invoice?.id || `INV-${Date.now()}`);
-  const [accountId, setAccountId] = useState<number | null>(invoice?.accountId || null);
+  const [quoteNumber, setQuoteNumber] = useState(quote?.number || `EST-${Date.now()}`);
+  const [accountId, setAccountId] = useState<number | null>(quote?.accountId || null);
+  const [opportunityId, setOpportunityId] = useState<number | null>(quote?.opportunityId || null);
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
-  const [status, setStatus] = useState(invoice?.status || 'DRAFT');
-  const [issueDate, setIssueDate] = useState(
-    invoice?.issueDate ? new Date(invoice.issueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+  const [opportunities, setOpportunities] = useState<OpportunityRecord[]>([]);
+  const [status, setStatus] = useState(quote?.status || 'DRAFT');
+  const [issuedAt, setIssuedAt] = useState(
+    quote?.issuedAt ? new Date(quote.issuedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
   );
-  const [dueDate, setDueDate] = useState(
-    invoice?.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : ''
+  const [expiresAt, setExpiresAt] = useState(
+    quote?.expiresAt ? new Date(quote.expiresAt).toISOString().split('T')[0] : ''
   );
-  const [paymentTerms, setPaymentTerms] = useState('Net 30');
-  const [notes, setNotes] = useState(invoice?.notes || '');
+  const [validityDays, setValidityDays] = useState('30');
+  const [notes, setNotes] = useState(quote?.notes || '');
   const [lineItems, setLineItems] = useState<LineItem[]>(
-    invoice?.items || [{ description: '', quantity: 1, rate: 0 }]
+    quote?.lines || [{ description: '', quantity: 1, unitPrice: 0, discount: 0 }]
   );
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [poNumber, setPoNumber] = useState('');
   const [tags, setTags] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -45,30 +47,49 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
   const [aiGenerating, setAiGenerating] = useState(false);
   const [showAiAssistant, setShowAiAssistant] = useState(true);
 
-  // Load accounts on mount
+  // Load accounts and opportunities on mount
   useEffect(() => {
-    const loadAccounts = async () => {
+    const loadData = async () => {
       try {
-        const res = await fetch('/api/accounts');
-        if (res.ok) {
-          const data = await res.json();
-          setAccounts(data);
+        const [accountsRes, opportunitiesRes] = await Promise.all([
+          fetch('/api/accounts'),
+          fetch('/api/opportunities')
+        ]);
+
+        if (accountsRes.ok) {
+          const accountsData = await accountsRes.json();
+          setAccounts(accountsData);
+        }
+
+        if (opportunitiesRes.ok) {
+          const opportunitiesData = await opportunitiesRes.json();
+          setOpportunities(opportunitiesData);
         }
       } catch (err) {
-        console.error('Failed to load accounts:', err);
+        console.error('Failed to load data:', err);
       }
     };
-    loadAccounts();
+    loadData();
   }, []);
 
   // Calculate totals
-  const subtotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+  const calculateLineTotal = (item: LineItem) => {
+    const baseTotal = item.quantity * item.unitPrice;
+    const discountAmount = (baseTotal * item.discount) / 100;
+    return baseTotal - discountAmount;
+  };
+
+  const subtotal = lineItems.reduce((sum, item) => sum + calculateLineTotal(item), 0);
+  const totalDiscount = lineItems.reduce((sum, item) => {
+    const baseTotal = item.quantity * item.unitPrice;
+    return sum + (baseTotal * item.discount) / 100;
+  }, 0);
   const tax = 0; // You can add tax calculation logic here
-  const total = subtotal + tax;
+  const total = subtotal;
 
   // Add line item
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: '', quantity: 1, rate: 0 }]);
+    setLineItems([...lineItems, { description: '', quantity: 1, unitPrice: 0, discount: 0 }]);
   };
 
   // Remove line item
@@ -95,16 +116,16 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
     }
   };
 
-  // AI Auto-Generate Invoice
+  // AI Auto-Generate Estimate
   const handleAutoGenerate = async () => {
     if (!aiPrompt.trim()) {
-      alert('Please enter a prompt for AI to generate the invoice');
+      alert('Please enter a prompt for AI to generate the estimate');
       return;
     }
 
     setAiGenerating(true);
     try {
-      const response = await fetch('/api/ai/generate-invoice', {
+      const response = await fetch('/api/ai/generate-estimate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: aiPrompt })
@@ -122,15 +143,20 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
         if (matchingAccount) setAccountId(matchingAccount.id);
       }
       if (data.items && Array.isArray(data.items)) {
-        setLineItems(data.items);
+        setLineItems(data.items.map((item: any) => ({
+          description: item.description || '',
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || item.price || 0,
+          discount: item.discount || 0
+        })));
       }
       if (data.notes) setNotes(data.notes);
-      if (data.dueDate) setDueDate(new Date(data.dueDate).toISOString().split('T')[0]);
+      if (data.expiresAt) setExpiresAt(new Date(data.expiresAt).toISOString().split('T')[0]);
 
       setAiPrompt('');
     } catch (error) {
       console.error('AI generation error:', error);
-      alert('Failed to generate invoice with AI');
+      alert('Failed to generate estimate with AI');
     } finally {
       setAiGenerating(false);
     }
@@ -139,7 +165,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
   // AI Parse Text
   const handleParseText = async () => {
     if (!aiPrompt.trim()) {
-      alert('Please paste invoice text or email to extract information');
+      alert('Please paste estimate text or email to extract information');
       return;
     }
 
@@ -148,7 +174,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
       const response = await fetch('/api/ai/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: aiPrompt, type: 'invoice' })
+        body: JSON.stringify({ text: aiPrompt, type: 'estimate' })
       });
 
       if (!response.ok) throw new Error('Text parsing failed');
@@ -160,13 +186,13 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
         setLineItems(data.items.map((item: any) => ({
           description: item.description || '',
           quantity: item.quantity || 1,
-          rate: item.rate || item.price || 0
+          unitPrice: item.unitPrice || item.price || 0,
+          discount: item.discount || 0
         })));
       }
       if (data.total) {
-        // If we have a total but no items, create a single line item
         if (!data.items || data.items.length === 0) {
-          setLineItems([{ description: 'Service', quantity: 1, rate: data.total }]);
+          setLineItems([{ description: 'Service', quantity: 1, unitPrice: data.total, discount: 0 }]);
         }
       }
       if (data.customerName) {
@@ -175,8 +201,8 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
         );
         if (matchingAccount) setAccountId(matchingAccount.id);
       }
-      if (data.dueDate) setDueDate(new Date(data.dueDate).toISOString().split('T')[0]);
-      if (data.issueDate) setIssueDate(new Date(data.issueDate).toISOString().split('T')[0]);
+      if (data.expiresAt) setExpiresAt(new Date(data.expiresAt).toISOString().split('T')[0]);
+      if (data.issuedAt) setIssuedAt(new Date(data.issuedAt).toISOString().split('T')[0]);
       if (data.notes) setNotes(data.notes);
 
       setAiPrompt('');
@@ -188,7 +214,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
     }
   };
 
-  // Save invoice
+  // Save quote
   const save = async () => {
     if (!accountId) {
       alert('Please select a customer');
@@ -203,17 +229,18 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
     setSaving(true);
     try {
       const payload = {
-        id: invoiceNumber,
+        number: quoteNumber,
         accountId,
+        opportunityId,
         status,
-        issueDate: new Date(issueDate).toISOString(),
-        dueDate: dueDate ? new Date(dueDate).toISOString() : new Date(issueDate).toISOString(),
+        issuedAt: new Date(issuedAt).toISOString(),
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
         notes,
-        amount: total,
-        items: lineItems.filter(item => item.description)
+        total,
+        lines: lineItems.filter(item => item.description)
       };
 
-      const url = isEditing ? `/api/invoices/${invoice.id}` : '/api/invoices';
+      const url = isEditing ? `/api/estimates/${quote.id}` : '/api/estimates';
       const method = isEditing ? 'PATCH' : 'POST';
 
       const res = await fetch(url, {
@@ -222,21 +249,22 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error('Failed to save invoice');
+      if (!res.ok) throw new Error('Failed to save quote');
 
-      const savedInvoice = await res.json();
-      if (onSaved) onSaved(savedInvoice);
+      const savedQuote = await res.json();
+      if (onSaved) onSaved(savedQuote);
       onClose();
     } catch (error) {
       console.error('Save failed:', error);
-      alert('Failed to save invoice');
+      alert('Failed to save estimate');
     } finally {
       setSaving(false);
     }
   };
 
-  // Get selected account details
+  // Get selected account and opportunity details
   const selectedAccount = accounts.find(a => a.id === accountId);
+  const selectedOpportunity = opportunities.find(o => o.id === opportunityId);
 
   return (
     <div style={{
@@ -260,7 +288,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
       }}>
         {/* Header */}
         <div style={{
-          background: '#2563EB',
+          background: '#10B981',
           color: 'white',
           padding: '20px 24px',
           display: 'flex',
@@ -269,10 +297,10 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
         }}>
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>
-              {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
+              {isEditing ? 'Edit Estimate' : 'Create New Estimate'}
             </h2>
             <p style={{ fontSize: 14, opacity: 0.9, marginTop: 4 }}>
-              Design and preview your professional invoice
+              Design and preview your professional estimate
             </p>
           </div>
           <button
@@ -308,14 +336,14 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
             overflowY: 'auto',
             borderRight: '1px solid #E5E7EB'
           }}>
-            {/* AI Invoice Assistant */}
+            {/* AI Estimate Assistant */}
             {!isEditing && (
               <div style={{
                 marginBottom: 24,
-                border: '2px solid #7C3AED',
+                border: '2px solid #10B981',
                 borderRadius: 12,
                 padding: 20,
-                background: 'linear-gradient(135deg, #F3E8FF 0%, #EDE9FE 100%)'
+                background: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)'
               }}>
                 <div
                   onClick={() => setShowAiAssistant(!showAiAssistant)}
@@ -328,20 +356,20 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Sparkles size={20} color="#7C3AED" />
+                    <Sparkles size={20} color="#10B981" />
                     <h3 style={{
                       fontSize: 16,
                       fontWeight: 700,
-                      color: '#7C3AED',
+                      color: '#10B981',
                       margin: 0
                     }}>
-                      AI Invoice Assistant
+                      AI Estimate Assistant
                     </h3>
                   </div>
                   {showAiAssistant ? (
-                    <ChevronUp size={20} color="#7C3AED" />
+                    <ChevronUp size={20} color="#10B981" />
                   ) : (
-                    <ChevronDown size={20} color="#7C3AED" />
+                    <ChevronDown size={20} color="#10B981" />
                   )}
                 </div>
 
@@ -349,21 +377,21 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   <>
                     <p style={{
                       fontSize: 13,
-                      color: '#6B21A8',
+                      color: '#065F46',
                       marginBottom: 12,
                       lineHeight: 1.5
                     }}>
-                      Let AI automatically generate a complete invoice, or paste text/email to extract information.
+                      Let AI automatically generate a complete estimate, or paste text/email to extract information.
                     </p>
                     <textarea
                       value={aiPrompt}
                       onChange={e => setAiPrompt(e.target.value)}
-                      placeholder="Example: 'Create invoice for Acme Corp, 123 Main St, email john@acme.com, for 10 widgets at $50 each, tax 8%, due in 30 days' or leave blank to auto-generate"
+                      placeholder="Example: 'Create estimate for Acme Corp, 5 units at $100 each, 10% discount, valid for 30 days' or leave blank to auto-generate"
                       rows={4}
                       style={{
                         width: '100%',
                         padding: '12px',
-                        border: '1px solid #C4B5FD',
+                        border: '1px solid #6EE7B7',
                         borderRadius: 8,
                         fontSize: 14,
                         resize: 'vertical',
@@ -378,7 +406,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         style={{
                           flex: 1,
                           padding: '12px 16px',
-                          background: '#7C3AED',
+                          background: '#10B981',
                           color: 'white',
                           border: 'none',
                           borderRadius: 8,
@@ -393,7 +421,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         }}
                       >
                         <Sparkles size={16} />
-                        {aiGenerating ? 'Generating...' : 'Auto-Generate Invoice'}
+                        {aiGenerating ? 'Generating...' : 'Auto-Generate Estimate'}
                       </button>
                       <button
                         onClick={handleParseText}
@@ -401,7 +429,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         style={{
                           flex: 1,
                           padding: '12px 16px',
-                          background: '#A78BFA',
+                          background: '#34D399',
                           color: 'white',
                           border: 'none',
                           borderRadius: 8,
@@ -456,7 +484,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   display: 'inline-block',
                   marginTop: 12,
                   padding: '8px 16px',
-                  background: '#2563EB',
+                  background: '#10B981',
                   color: 'white',
                   borderRadius: 6,
                   cursor: 'pointer',
@@ -474,7 +502,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
               </div>
             </div>
 
-            {/* Invoice Details */}
+            {/* Estimate Details */}
             <div style={{ marginBottom: 24 }}>
               <h3 style={{
                 fontSize: 14,
@@ -483,16 +511,16 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                 marginBottom: 16,
                 textTransform: 'uppercase'
               }}>
-                Invoice Details
+                Estimate Details
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
-                    Invoice Number *
+                    Estimate Number *
                   </label>
                   <input
-                    value={invoiceNumber}
-                    onChange={e => setInvoiceNumber(e.target.value)}
+                    value={quoteNumber}
+                    onChange={e => setQuoteNumber(e.target.value)}
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -502,79 +530,6 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     }}
                     disabled={isEditing}
                   />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
-                    PO Number
-                  </label>
-                  <input
-                    value={poNumber}
-                    onChange={e => setPoNumber(e.target.value)}
-                    placeholder="Optional"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: 6,
-                      fontSize: 14
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
-                    Invoice Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={issueDate}
-                    onChange={e => setIssueDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: 6,
-                      fontSize: 14
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
-                    Due Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={e => setDueDate(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: 6,
-                      fontSize: 14
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
-                    Payment Terms
-                  </label>
-                  <select
-                    value={paymentTerms}
-                    onChange={e => setPaymentTerms(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value="Net 30">Net 30</option>
-                    <option value="Net 15">Net 15</option>
-                    <option value="Net 60">Net 60</option>
-                    <option value="Due on receipt">Due on receipt</option>
-                  </select>
                 </div>
                 <div>
                   <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
@@ -594,14 +549,95 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   >
                     <option value="DRAFT">Draft</option>
                     <option value="SENT">Sent</option>
-                    <option value="PAID">Paid</option>
-                    <option value="OVERDUE">Overdue</option>
+                    <option value="ACCEPTED">Accepted</option>
+                    <option value="DECLINED">Declined</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
+                    Issue Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={issuedAt}
+                    onChange={e => setIssuedAt(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: 6,
+                      fontSize: 14
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={expiresAt}
+                    onChange={e => setExpiresAt(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: 6,
+                      fontSize: 14
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
+                    Validity Period
+                  </label>
+                  <select
+                    value={validityDays}
+                    onChange={e => setValidityDays(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="30">30 days</option>
+                    <option value="60">60 days</option>
+                    <option value="90">90 days</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
+                    Related Opportunity
+                  </label>
+                  <select
+                    value={opportunityId || ''}
+                    onChange={e => setOpportunityId(e.target.value ? Number(e.target.value) : null)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: 6,
+                      fontSize: 14,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="">None</option>
+                    {opportunities.map(opp => (
+                      <option key={opp.id} value={opp.id}>
+                        {opp.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Bill To */}
+            {/* Customer */}
             <div style={{ marginBottom: 24 }}>
               <h3 style={{
                 fontSize: 14,
@@ -610,7 +646,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                 marginBottom: 16,
                 textTransform: 'uppercase'
               }}>
-                Bill To
+                Customer
               </h3>
               <div>
                 <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
@@ -678,7 +714,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         fontWeight: 600,
                         color: '#6B7280',
                         textAlign: 'left',
-                        width: '40%'
+                        width: '35%'
                       }}>
                         DESCRIPTION
                       </th>
@@ -688,7 +724,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         fontWeight: 600,
                         color: '#6B7280',
                         textAlign: 'center',
-                        width: '15%'
+                        width: '10%'
                       }}>
                         QTY
                       </th>
@@ -698,9 +734,19 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         fontWeight: 600,
                         color: '#6B7280',
                         textAlign: 'right',
-                        width: '20%'
+                        width: '15%'
                       }}>
-                        RATE
+                        PRICE
+                      </th>
+                      <th style={{
+                        padding: '10px 12px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: '#6B7280',
+                        textAlign: 'center',
+                        width: '15%'
+                      }}>
+                        DISCOUNT
                       </th>
                       <th style={{
                         padding: '10px 12px',
@@ -710,7 +756,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         textAlign: 'right',
                         width: '20%'
                       }}>
-                        AMOUNT
+                        TOTAL
                       </th>
                       <th style={{ width: '5%' }}></th>
                     </tr>
@@ -751,8 +797,8 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         <td style={{ padding: '8px 12px' }}>
                           <input
                             type="number"
-                            value={item.rate}
-                            onChange={e => updateLineItem(index, 'rate', parseInt(e.target.value) || 0)}
+                            value={item.unitPrice}
+                            onChange={e => updateLineItem(index, 'unitPrice', parseInt(e.target.value) || 0)}
                             min="0"
                             style={{
                               width: '100%',
@@ -764,13 +810,33 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                             }}
                           />
                         </td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <input
+                              type="number"
+                              value={item.discount}
+                              onChange={e => updateLineItem(index, 'discount', parseInt(e.target.value) || 0)}
+                              min="0"
+                              max="100"
+                              style={{
+                                width: '60%',
+                                padding: '6px 8px',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: 4,
+                                fontSize: 14,
+                                textAlign: 'center'
+                              }}
+                            />
+                            <Percent size={14} color="#6B7280" />
+                          </div>
+                        </td>
                         <td style={{
                           padding: '8px 12px',
                           textAlign: 'right',
                           fontWeight: 600,
                           color: COLORS.navyDark
                         }}>
-                          {formatCurrency(item.quantity * item.rate)}
+                          {formatCurrency(calculateLineTotal(item))}
                         </td>
                         <td style={{ padding: '8px' }}>
                           {lineItems.length > 1 && (
@@ -800,7 +866,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     background: '#F9FAFB',
                     border: 'none',
                     borderTop: '1px solid #E5E7EB',
-                    color: '#2563EB',
+                    color: '#10B981',
                     fontSize: 14,
                     fontWeight: 500,
                     cursor: 'pointer',
@@ -819,13 +885,13 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
             {/* Notes */}
             <div style={{ marginBottom: 24 }}>
               <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 6 }}>
-                Notes (Optional)
+                Notes / Terms & Conditions
               </label>
               <textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                rows={3}
-                placeholder="Add any notes or payment instructions..."
+                rows={4}
+                placeholder="Add any notes, terms, or conditions..."
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -852,7 +918,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
               padding: 32,
               minHeight: 600
             }}>
-              {/* Invoice Header */}
+              {/* Estimate Header */}
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -890,18 +956,18 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   <h1 style={{
                     fontSize: 32,
                     fontWeight: 700,
-                    color: COLORS.navyDark,
+                    color: '#10B981',
                     marginBottom: 8
                   }}>
-                    INVOICE
+                    ESTIMATE
                   </h1>
                   <div style={{ fontSize: 16, color: '#6B7280' }}>
-                    {invoiceNumber}
+                    {quoteNumber}
                   </div>
                 </div>
               </div>
 
-              {/* Bill To and Details */}
+              {/* Customer and Details */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
@@ -916,7 +982,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     marginBottom: 12,
                     textTransform: 'uppercase'
                   }}>
-                    Bill To:
+                    Estimate For:
                   </h3>
                   <div style={{ fontSize: 14, color: COLORS.navyDark }}>
                     <div style={{ fontWeight: 600, marginBottom: 4 }}>
@@ -941,21 +1007,23 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                       <span style={{ color: '#6B7280' }}>Date:</span>
                       <span style={{ color: COLORS.navyDark, fontWeight: 500 }}>
-                        {formatDisplayDate(issueDate)}
+                        {formatDisplayDate(issuedAt)}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ color: '#6B7280' }}>Due:</span>
+                      <span style={{ color: '#6B7280' }}>Valid Until:</span>
                       <span style={{ color: COLORS.navyDark, fontWeight: 500 }}>
-                        {dueDate ? formatDisplayDate(dueDate) : 'Not set'}
+                        {expiresAt ? formatDisplayDate(expiresAt) : 'Not set'}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: '#6B7280' }}>Terms:</span>
-                      <span style={{ color: COLORS.navyDark, fontWeight: 500 }}>
-                        {paymentTerms}
-                      </span>
-                    </div>
+                    {selectedOpportunity && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6B7280' }}>Project:</span>
+                        <span style={{ color: COLORS.navyDark, fontWeight: 500 }}>
+                          {selectedOpportunity.name}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -983,7 +1051,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         textAlign: 'left',
                         textTransform: 'uppercase'
                       }}>
-                        Item
+                        Description
                       </th>
                       <th style={{
                         padding: '12px 0',
@@ -1010,6 +1078,16 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                         fontSize: 12,
                         fontWeight: 600,
                         color: '#6B7280',
+                        textAlign: 'center',
+                        textTransform: 'uppercase'
+                      }}>
+                        Disc
+                      </th>
+                      <th style={{
+                        padding: '12px 0',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: '#6B7280',
                         textAlign: 'right',
                         textTransform: 'uppercase'
                       }}>
@@ -1030,10 +1108,13 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                           {item.quantity}
                         </td>
                         <td style={{ padding: '12px 0', fontSize: 14, color: COLORS.navyDark, textAlign: 'right' }}>
-                          {formatCurrency(item.rate)}
+                          {formatCurrency(item.unitPrice)}
+                        </td>
+                        <td style={{ padding: '12px 0', fontSize: 14, color: COLORS.navyDark, textAlign: 'center' }}>
+                          {item.discount > 0 ? `${item.discount}%` : '-'}
                         </td>
                         <td style={{ padding: '12px 0', fontSize: 14, color: COLORS.navyDark, textAlign: 'right', fontWeight: 600 }}>
-                          {formatCurrency(item.quantity * item.rate)}
+                          {formatCurrency(calculateLineTotal(item))}
                         </td>
                       </tr>
                     ))}
@@ -1052,9 +1133,22 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                   }}>
                     <span style={{ color: '#6B7280' }}>Subtotal:</span>
                     <span style={{ color: COLORS.navyDark, fontWeight: 500 }}>
-                      {formatCurrency(subtotal)}
+                      {formatCurrency(subtotal + totalDiscount)}
                     </span>
                   </div>
+                  {totalDiscount > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: 8,
+                      fontSize: 14
+                    }}>
+                      <span style={{ color: '#6B7280' }}>Discount:</span>
+                      <span style={{ color: '#EF4444', fontWeight: 500 }}>
+                        -{formatCurrency(totalDiscount)}
+                      </span>
+                    </div>
+                  )}
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -1064,7 +1158,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     fontWeight: 700
                   }}>
                     <span style={{ color: COLORS.navyDark }}>TOTAL:</span>
-                    <span style={{ color: '#2563EB' }}>
+                    <span style={{ color: '#10B981' }}>
                       {formatCurrency(total)}
                     </span>
                   </div>
@@ -1086,7 +1180,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                     marginBottom: 8,
                     textTransform: 'uppercase'
                   }}>
-                    Notes
+                    Terms & Conditions
                   </h4>
                   <p style={{
                     fontSize: 14,
@@ -1108,7 +1202,7 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                 fontSize: 12,
                 color: '#9CA3AF'
               }}>
-                Thank you for your business!
+                This estimate is valid until {expiresAt ? formatDisplayDate(expiresAt) : 'specified date'}
               </div>
             </div>
           </div>
@@ -1170,14 +1264,14 @@ export default function InvoiceEditModal({ invoice, onClose, onSaved }: InvoiceE
                 padding: '10px 20px',
                 borderRadius: 6,
                 border: 'none',
-                background: '#2563EB',
+                background: '#10B981',
                 color: 'white',
                 cursor: 'pointer',
                 fontSize: 14,
                 fontWeight: 500
               }}
             >
-              {saving ? 'Saving...' : 'Send Invoice'}
+              {saving ? 'Saving...' : 'Send Estimate'}
             </button>
           </div>
         </div>
