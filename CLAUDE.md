@@ -211,3 +211,4 @@ The workflow system uses an event-driven architecture to decouple triggers from 
 - **CREATE_INVOICE**: Auto-create invoices when opportunities reach "Closed Won"
 
 **Critical**: Keep `npm run worker:automation` running alongside the API server, otherwise queued jobs will accumulate in Redis without being processed.
+- Add to memory. Make sure to push commits tot github because we are using workflows to rebuild on commit

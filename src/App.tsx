@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { DragEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BZHeader from './components/BZHeader';
 import NavigationTabs from './components/NavigationTabs';
 import OpportunityDetailModal from './components/OpportunityDetailModal';
@@ -16,15 +17,51 @@ import LeadsView from './components/LeadsView';
 import QuotesView from './components/QuotesView';
 import ContractsView from './components/ContractsView';
 import BZPipeline from './components/BZPipeline';
-import AssistantPanel from './components/AssistantPanel';
+import AssistantPanelAgentic from './components/AssistantPanelAgentic';
+import AIFloatingButton from './components/AIFloatingButton';
 import SettingsModal from './components/SettingsModal';
 import CommandPalette from './components/CommandPalette';
 import type { AppTab, Opportunity, StageId, UserSummary } from './types';
 
 type PipelineView = 'pipeline';
 
+// Map URL paths to tab IDs
+const pathToTab: Record<string, AppTab> = {
+  '/': 'home',
+  '/home': 'home',
+  '/opportunities': 'opportunities',
+  '/accounts': 'accounts',
+  '/contacts': 'contacts',
+  '/customer-information': 'customerInformation',
+  '/invoices': 'invoices',
+  '/leads': 'leads',
+  '/estimates': 'estimates',
+  '/contracts': 'contracts',
+  '/tasks': 'tasks',
+  '/calendar': 'calendar',
+  '/reports': 'reports'
+};
+
+// Map tab IDs to URL paths
+const tabToPath: Record<AppTab, string> = {
+  home: '/home',
+  opportunities: '/opportunities',
+  accounts: '/accounts',
+  contacts: '/contacts',
+  customerInformation: '/customer-information',
+  invoices: '/invoices',
+  leads: '/leads',
+  estimates: '/estimates',
+  contracts: '/contracts',
+  tasks: '/tasks',
+  calendar: '/calendar',
+  reports: '/reports'
+};
+
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<AppTab>('home');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [currentTab, setCurrentTab] = useState<AppTab>(pathToTab[location.pathname] || 'home');
   const [view, setView] = useState<PipelineView>('pipeline');
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [draggedItem, setDraggedItem] = useState<Opportunity | null>(null);
@@ -39,6 +76,21 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const currentUser: UserSummary = { name: "Deo Umali", initials: "DU" };
+
+  // Sync URL changes to tab state
+  useEffect(() => {
+    const newTab = pathToTab[location.pathname] || 'home';
+    setCurrentTab(newTab);
+  }, [location.pathname]);
+
+  // Navigate to URL when tab changes
+  const handleTabChange = useCallback((tab: AppTab) => {
+    const path = tabToPath[tab];
+    if (path && path !== location.pathname) {
+      navigate(path);
+    }
+    setCurrentTab(tab);
+  }, [navigate, location.pathname]);
 
   const loadOpportunities = useCallback(async () => {
     setLoading(true);
@@ -67,11 +119,11 @@ export default function App() {
   useEffect(() => {
     const onNavigate = (e: any) => {
       const tab = e?.detail?.tab as any;
-      if (tab) setCurrentTab(tab);
+      if (tab) handleTabChange(tab);
     };
     window.addEventListener('app:navigate', onNavigate as any);
     return () => window.removeEventListener('app:navigate', onNavigate as any);
-  }, []);
+  }, [handleTabChange]);
 
   const handleDragStart = (_event: DragEvent<HTMLDivElement>, opportunity: Opportunity) => {
     setDraggedItem(opportunity);
@@ -118,7 +170,7 @@ export default function App() {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#F9FAFB' }}>
       <BZHeader currentUser={currentUser} notifications={0} setShowNotifications={setShowNotifications} setShowAssistant={setShowAssistant} onOpenCommand={() => setCommandOpen(true)} focusMode={focusMode} onToggleFocus={() => setFocusMode(!focusMode)} onOpenSettings={() => setShowSettings(true)} />
-      {!focusMode && (<NavigationTabs currentTab={currentTab} setCurrentTab={setCurrentTab} />)}
+      {!focusMode && (<NavigationTabs currentTab={currentTab} setCurrentTab={handleTabChange} />)}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {error && (
@@ -185,8 +237,13 @@ export default function App() {
       {showNotifications && (
         <NotificationsPanel onClose={() => setShowNotifications(false)} />
       )}
-      {showAssistant && <AssistantPanel onClose={() => setShowAssistant(false)} />}
-      {commandOpen && (<CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={(t)=> setCurrentTab(t as any)} />)}
+
+      {/* AI Assistant - floating button or panel */}
+      {!showAssistant && <AIFloatingButton onClick={() => setShowAssistant(true)} />}
+      {showAssistant && <AssistantPanelAgentic onClose={() => setShowAssistant(false)} />}
+
+      {commandOpen && (<CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={(t)=> handleTabChange(t as any)} />)}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

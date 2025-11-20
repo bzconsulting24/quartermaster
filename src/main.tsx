@@ -15,8 +15,8 @@ ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
         <Route path="/estimate/:id" element={<EstimateDetailPage />} />
+        <Route path="/*" element={<App />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

@@ -35,7 +35,10 @@
       "Bash(npm install:*)",
       "Bash(docker network inspect:*)",
       "Bash(docker network:*)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(git pull:*)",
+      "Bash(docker pull:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

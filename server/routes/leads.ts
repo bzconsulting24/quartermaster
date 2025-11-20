@@ -112,6 +112,7 @@ router.post(
         } else {
           // Enrich account data with AI inference
           const enrichedData = await enrichAccountData(company, notes, owner);
+          console.log('AI Enrichment Result:', { company, enrichedData });
 
           // Create new account with enriched data
           const newAccount = await prisma.account.create({

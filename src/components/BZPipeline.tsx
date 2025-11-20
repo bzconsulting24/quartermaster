@@ -28,21 +28,21 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
         const stageTotal = stageOpps.reduce((sum, o) => sum + o.amount, 0);
 
         return (
-          <div key={stage.id} style={{ flexShrink: 0, width: '288px' }}>
+          <div key={stage.id} style={{ flexShrink: 0, width: '240px' }}>
             <div style={{
               background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
               borderRadius: '8px 8px 0 0',
               border: `2px solid ${COLORS.navyDark}`,
               borderBottom: 'none'
             }}>
-              <div style={{ padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: stage.color, border: '2px solid white' }}></div>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>{stage.name}</span>
+              <div style={{ padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: stage.color, border: '2px solid white' }}></div>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'white' }}>{stage.name}</span>
                 </div>
-                <span style={{ background: COLORS.gold, color: COLORS.navyDark, padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>{stageOpps.length}</span>
+                <span style={{ background: COLORS.gold, color: COLORS.navyDark, padding: '2px 6px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{stageOpps.length}</span>
               </div>
-              <div style={{ padding: '0 12px 12px', fontSize: '12px', color: COLORS.gold, fontWeight: '600' }}>
+              <div style={{ padding: '0 10px 8px', fontSize: '11px', color: COLORS.gold, fontWeight: '600' }}>
                 {formatCurrency(stageTotal)}
               </div>
             </div>
@@ -69,8 +69,8 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                     background: 'white',
                     border: '2px solid #E5E7EB',
                     borderRadius: '6px',
-                    padding: '12px',
-                    marginBottom: '8px',
+                    padding: '8px',
+                    marginBottom: '6px',
                     cursor: 'pointer',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                     transition: 'all 0.2s'
@@ -78,32 +78,32 @@ const BZPipeline = ({ opportunities, onDragStart, onDragOver, onDrop, onOpportun
                   onMouseEnter={(event) => event.currentTarget.style.borderColor = COLORS.gold}
                   onMouseLeave={(event) => event.currentTarget.style.borderColor = '#E5E7EB'}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                    <div style={{ color: COLORS.navyDark, fontSize: '14px', fontWeight: '600', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '4px' }}>
+                    <div style={{ color: COLORS.navyDark, fontSize: '13px', fontWeight: '600', flex: 1, lineHeight: '1.3' }}>
                       {opp.name}
                     </div>
-                    <button onClick={(e)=>{ e.stopPropagation(); onOpportunityClick(opp); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px' }}>
-                      <MoreHorizontal size={16} color="#6B7280" />
+                    <button onClick={(e)=>{ e.stopPropagation(); onOpportunityClick(opp); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px' }}>
+                      <MoreHorizontal size={14} color="#6B7280" />
                     </button>
                   </div>
 
-                  <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '11px', color: '#6B7280', marginBottom: '4px' }}>
                     {opp.account?.name ?? 'Unassigned'}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: COLORS.navyDark }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: COLORS.navyDark }}>
                       {formatCurrency(opp.amount)}
                     </span>
-                    <span style={{ fontSize: '12px', color: '#6B7280' }}>{formatDisplayDate(opp.closeDate)}</span>
+                    <span style={{ fontSize: '10px', color: '#6B7280' }}>{formatDisplayDate(opp.closeDate)}</span>
                   </div>
 
-                  <div style={{ paddingTop: '8px', borderTop: '1px solid #E5E7EB' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', marginBottom: '4px' }}>
+                  <div style={{ paddingTop: '4px', borderTop: '1px solid #E5E7EB' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', marginBottom: '2px' }}>
                       <span style={{ color: '#6B7280' }}>{opp.owner}</span>
                       <span style={{ fontWeight: '600', color: COLORS.navyDark }}>{opp.probability}%</span>
                     </div>
-                    <div style={{ height: '6px', background: '#E5E7EB', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ height: '4px', background: '#E5E7EB', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{
                         height: '100%',
                         width: `${opp.probability}%`,
