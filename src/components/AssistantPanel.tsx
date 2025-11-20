@@ -23,7 +23,7 @@ type ChatMessage = {
 
 const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: 'Hi! I\'m Quartermaster AI. Ask me about your pipeline, opportunities, tasks, or anything CRM-related!' }
+    { role: 'assistant', content: 'Hi! I\'m Quartermaster AI. I can help you with your CRM - create invoices, add contacts, check your pipeline, and more. You can chat with me in English or Tagalog! 🇵🇭' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,7 +71,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
 
   const clearChat = () => {
     setMessages([
-      { role: 'assistant', content: 'Hi! I\'m Quartermaster AI. Ask me about your pipeline, opportunities, tasks, or anything CRM-related!' }
+      { role: 'assistant', content: 'Hi! I\'m Quartermaster AI. I can help you with your CRM - create invoices, add contacts, check your pipeline, and more. You can chat with me in English or Tagalog! 🇵🇭' }
     ]);
     setInput('');
     setPreview(null);
@@ -80,21 +80,21 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const executeActions = async (actions: Array<any>) => {
     setExecutingActions(true);
     try {
-      const response = await fetch('/api/assistant/execute', {
+      const response = await fetch('/api/assistant/execute-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actions })
       });
       const data = await response.json();
 
-      const successCount = data.executedCount || 0;
-      const failedCount = actions.length - successCount;
+      const successCount = data.created || 0;
+      const failedCount = data.failed || 0;
 
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
-          message: `✅ Executed ${successCount} action(s) successfully${failedCount > 0 ? `. ${failedCount} failed.` : '!'}`,
-          data: { results: data.results }
+          message: `✅ Created ${successCount} record(s) successfully${failedCount > 0 ? `. ${failedCount} failed.` : '!'}`,
+          data: data.createdRecords?.length > 0 ? { created: data.createdRecords } : undefined
         }
       }]);
     } catch (error) {

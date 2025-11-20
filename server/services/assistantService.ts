@@ -487,7 +487,7 @@ export async function runAssistant(threadId: string, assistantId: string): Promi
         // Submit tool outputs and continue
         if (toolOutputs.length > 0) {
           const submitRun = await openai.beta.threads.runs.submitToolOutputs(
-            threadId,
+            event.data.thread_id,
             event.data.id,
             { tool_outputs: toolOutputs, stream: true }
           );

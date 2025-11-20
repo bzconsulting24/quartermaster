@@ -26,6 +26,7 @@ import assistantActionsRouter from './routes/assistantActions.js';
 import assistantMemoryRouter from './routes/assistantMemory.js';
 import assistantFileAnalysisRouter from './routes/assistantFileAnalysis.js';
 import assistantAgenticRouter from './routes/assistantAgentic.js';
+import assistantWorkflowRouter from './routes/assistantWorkflow.js';
 
 import searchRouter from './routes/search.js';
 import ingestRouter from './routes/ingest.js';
@@ -71,6 +72,7 @@ app.use('/api/assistant/actions', assistantActionsRouter);
 app.use('/api/assistant/memory', assistantMemoryRouter);
 app.use('/api/assistant', assistantFileAnalysisRouter);
 app.use('/api/assistant/agentic', assistantAgenticRouter);
+app.use('/api/assistant/workflow', assistantWorkflowRouter);
 
 app.use('/api/search', searchRouter);
 app.use('/api/ingest', ingestRouter);

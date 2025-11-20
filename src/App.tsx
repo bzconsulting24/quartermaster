@@ -17,7 +17,7 @@ import LeadsView from './components/LeadsView';
 import QuotesView from './components/QuotesView';
 import ContractsView from './components/ContractsView';
 import BZPipeline from './components/BZPipeline';
-import AssistantPanelAgentic from './components/AssistantPanelAgentic';
+import AssistantPanel from './components/AssistantPanel';
 import AIFloatingButton from './components/AIFloatingButton';
 import SettingsModal from './components/SettingsModal';
 import CommandPalette from './components/CommandPalette';
@@ -240,7 +240,7 @@ export default function App() {
 
       {/* AI Assistant - floating button or panel */}
       {!showAssistant && <AIFloatingButton onClick={() => setShowAssistant(true)} />}
-      {showAssistant && <AssistantPanelAgentic onClose={() => setShowAssistant(false)} />}
+      {showAssistant && <AssistantPanel onClose={() => setShowAssistant(false)} />}
 
       {commandOpen && (<CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={(t)=> handleTabChange(t as any)} />)}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}

@@ -187,4 +187,123 @@ Be smart about detecting duplicates - check existing accounts/contacts before su
   })
 );
 
+// Execute plan actions
+router.post(
+  '/execute-plan',
+  asyncHandler(async (req, res) => {
+    const { actions } = req.body as { actions: any[] };
+
+    if (!actions || !Array.isArray(actions)) {
+      return res.status(400).json({ error: 'Invalid actions array' });
+    }
+
+    const results = {
+      success: true,
+      created: 0,
+      failed: 0,
+      errors: [] as any[],
+      createdRecords: [] as any[]
+    };
+
+    // Execute each action
+    for (const action of actions) {
+      try {
+        let record;
+
+        switch (action.type) {
+          case 'CREATE_ACCOUNT':
+            record = await prisma.account.create({
+              data: {
+                name: action.params.name,
+                industry: action.params.industry || null,
+                type: action.params.type || 'SMB',
+                website: action.params.website || null,
+                description: action.params.description || null
+              }
+            });
+            results.createdRecords.push({ type: 'account', record });
+            results.created++;
+            break;
+
+          case 'CREATE_CONTACT':
+            // Try to find account if accountName is provided
+            let accountId = null;
+            if (action.params.accountName) {
+              const account = await prisma.account.findFirst({
+                where: { name: { contains: action.params.accountName, mode: 'insensitive' } }
+              });
+              accountId = account?.id || null;
+            }
+
+            record = await prisma.contact.create({
+              data: {
+                firstName: action.params.firstName || action.params.name?.split(' ')[0] || 'Unknown',
+                lastName: action.params.lastName || action.params.name?.split(' ').slice(1).join(' ') || '',
+                email: action.params.email || null,
+                phone: action.params.phone || null,
+                title: action.params.title || null,
+                accountId
+              }
+            });
+            results.createdRecords.push({ type: 'contact', record });
+            results.created++;
+            break;
+
+          case 'CREATE_LEAD':
+            record = await prisma.lead.create({
+              data: {
+                firstName: action.params.firstName || action.params.name?.split(' ')[0] || 'Unknown',
+                lastName: action.params.lastName || action.params.name?.split(' ').slice(1).join(' ') || '',
+                email: action.params.email || null,
+                phone: action.params.phone || null,
+                company: action.params.company || null,
+                source: action.params.source || 'Import'
+              }
+            });
+            results.createdRecords.push({ type: 'lead', record });
+            results.created++;
+            break;
+
+          case 'CREATE_INVOICE':
+            // Find account for invoice
+            const invoiceAccount = await prisma.account.findFirst({
+              where: { name: { contains: action.params.accountName, mode: 'insensitive' } }
+            });
+
+            if (!invoiceAccount) {
+              throw new Error(`Account not found: ${action.params.accountName}`);
+            }
+
+            record = await prisma.invoice.create({
+              data: {
+                accountId: invoiceAccount.id,
+                amount: parseFloat(action.params.amount),
+                dueDate: action.params.dueDate ? new Date(action.params.dueDate) : new Date(),
+                status: action.params.status || 'Draft'
+              }
+            });
+            results.createdRecords.push({ type: 'invoice', record });
+            results.created++;
+            break;
+
+          default:
+            results.errors.push({
+              action,
+              error: `Unknown action type: ${action.type}`
+            });
+            results.failed++;
+        }
+      } catch (error: any) {
+        results.failed++;
+        results.errors.push({
+          action,
+          error: error.message
+        });
+      }
+    }
+
+    res.json(results);
+  })
+);
+
 export default router;
