@@ -149,10 +149,35 @@ IMPORTANT: You MUST respond in valid JSON format with this structure:
   ],
   "actions": [
     {
-      "type": "CREATE_ACCOUNT" | "CREATE_CONTACT" | "CREATE_LEAD" | "CREATE_INVOICE" | "CREATE_OPPORTUNITY",
+      "type": "CREATE_ACCOUNT",
       "description": "Create account: [Name]",
       "params": {
-        // Mapped parameters from file data
+        "name": "Company Name",
+        "industry": "Industry Type",
+        "type": "Enterprise" | "MidMarket" | "SMB",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "CREATE_CONTACT",
+      "description": "Create contact: [Name]",
+      "params": {
+        "name": "Full Name",
+        "email": "email@example.com",
+        "phone": "123-456-7890",
+        "title": "Job Title",
+        "accountName": "Company Name"
+      }
+    },
+    {
+      "type": "CREATE_LEAD",
+      "description": "Create lead: [Name]",
+      "params": {
+        "name": "Lead Name",
+        "email": "lead@example.com",
+        "phone": "123-456-7890",
+        "company": "Company Name",
+        "source": "Import"
       }
     }
   ],
@@ -164,14 +189,35 @@ IMPORTANT: You MUST respond in valid JSON format with this structure:
   }
 }
 
-Column mapping guidelines:
-- "Company Name", "Account Name", "Company" → name (for accounts)
-- "Contact Name", "Full Name", "Name" → name (for contacts)
-- "Email", "Email Address" → email
-- "Phone", "Phone Number", "Tel" → phone
-- "Industry", "Sector" → industry
-- "Amount", "Value", "Total" → amount (for invoices/opportunities)
-- "Due Date", "Close Date" → closeDate/dueDate
+CRITICAL - Only use these exact fields (extra fields will cause errors):
+
+**Accounts:**
+- name (required) - "Company Name", "Account Name", "Company"
+- industry (optional) - "Industry", "Sector"
+- type (optional) - "Enterprise", "MidMarket", or "SMB"
+- website (optional) - "Website", "URL"
+DO NOT USE: owner, revenue, description, or any other fields
+
+**Contacts:**
+- name (required) - "Contact Name", "Full Name", "Name"
+- email (required) - "Email", "Email Address"
+- phone (optional) - "Phone", "Phone Number", "Tel"
+- title (optional) - "Title", "Job Title", "Position"
+- accountName (MUST USE THIS, not "account") - "Company", "Account Name"
+DO NOT USE: firstName, lastName separately - combine into "name"
+
+**Leads:**
+- name (required) - "Lead Name", "Full Name"
+- email (optional) - "Email"
+- phone (optional) - "Phone"
+- company (optional) - "Company"
+- source (optional) - defaults to "Import"
+
+**Invoices:**
+- accountName (required) - "Company", "Account Name"
+- amount (required) - "Amount", "Value", "Total"
+- dueDate (optional) - "Due Date"
+- status (optional) - "Draft", "Sent", "Paid", "Overdue"
 
 Be smart about detecting duplicates - check existing accounts/contacts before suggesting CREATE actions.`;
 
