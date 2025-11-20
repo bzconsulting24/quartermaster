@@ -489,11 +489,18 @@ router.post(
   })
 );
 
+// Type for actions
+type BulkAction = {
+  type: string;
+  description: string;
+  params: Record<string, any>;
+};
+
 // Bulk execute plan actions (optimized for large datasets)
 router.post(
   '/execute-plan-bulk',
   asyncHandler(async (req, res) => {
-    const { actions } = req.body as { actions: any[] };
+    const { actions } = req.body as { actions: BulkAction[] };
 
     if (!actions || !Array.isArray(actions)) {
       return res.status(400).json({ error: 'Invalid actions array' });
@@ -509,18 +516,18 @@ router.post(
 
     try {
       // Group actions by type for bulk processing
-      const groupedActions = actions.reduce((acc, action) => {
+      const groupedActions = actions.reduce((acc, action: BulkAction) => {
         if (!acc[action.type]) {
           acc[action.type] = [];
         }
         acc[action.type].push(action);
         return acc;
-      }, {} as Record<string, any[]>);
+      }, {} as Record<string, BulkAction[]>);
 
       // 1. Bulk create accounts (no dependencies)
       if (groupedActions['CREATE_ACCOUNT']) {
         try {
-          const accountData = groupedActions['CREATE_ACCOUNT'].map(action => ({
+          const accountData = groupedActions['CREATE_ACCOUNT'].map((action: BulkAction) => ({
             name: action.params.name,
             industry: action.params.industry || null,
             type: action.params.type || 'SMB',
@@ -543,7 +550,7 @@ router.post(
       // 2. Bulk create leads (no dependencies)
       if (groupedActions['CREATE_LEAD']) {
         try {
-          const leadData = groupedActions['CREATE_LEAD'].map(action => ({
+          const leadData = groupedActions['CREATE_LEAD'].map((action: BulkAction) => ({
             name: action.params.name || action.params.firstName || 'Unknown Lead',
             email: action.params.email || null,
             phone: action.params.phone || null,
@@ -572,7 +579,7 @@ router.post(
         // Get all unique account names
         const accountNames = [...new Set(
           groupedActions['CREATE_CONTACT']
-            .map(action => action.params.accountName)
+            .map((action: BulkAction) => action.params.accountName)
             .filter(Boolean)
         )];
 
@@ -588,7 +595,7 @@ router.post(
         const accountMap = new Map(accounts.map(acc => [acc.name.toLowerCase(), acc.id]));
 
         // Prepare contact data
-        for (const action of groupedActions['CREATE_CONTACT']) {
+        for (const action of groupedActions['CREATE_CONTACT'] as BulkAction[]) {
           const accountName = action.params.accountName;
           const accountId = accountName ? accountMap.get(accountName.toLowerCase()) : undefined;
 
@@ -639,7 +646,7 @@ router.post(
         // Get all unique account names
         const accountNames = [...new Set(
           groupedActions['CREATE_INVOICE']
-            .map(action => action.params.accountName)
+            .map((action: BulkAction) => action.params.accountName)
             .filter(Boolean)
         )];
 
@@ -654,7 +661,7 @@ router.post(
         const accountMap = new Map(accounts.map(acc => [acc.name.toLowerCase(), acc.id]));
 
         // Prepare invoice data
-        for (const action of groupedActions['CREATE_INVOICE']) {
+        for (const action of groupedActions['CREATE_INVOICE'] as BulkAction[]) {
           const accountName = action.params.accountName;
           const accountId = accountName ? accountMap.get(accountName.toLowerCase()) : undefined;
 
@@ -705,7 +712,7 @@ router.post(
         // Get all unique account names
         const accountNames = [...new Set(
           groupedActions['CREATE_OPPORTUNITY']
-            .map(action => action.params.accountName)
+            .map((action: BulkAction) => action.params.accountName)
             .filter(Boolean)
         )];
 
@@ -720,7 +727,7 @@ router.post(
         const accountMap = new Map(accounts.map(acc => [acc.name.toLowerCase(), acc.id]));
 
         // Prepare opportunity data
-        for (const action of groupedActions['CREATE_OPPORTUNITY']) {
+        for (const action of groupedActions['CREATE_OPPORTUNITY'] as BulkAction[]) {
           const accountName = action.params.accountName;
           const accountId = accountName ? accountMap.get(accountName.toLowerCase()) : undefined;
 
