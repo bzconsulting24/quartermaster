@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Send, Trash2, Maximize2, Minimize2, Paperclip, FileText } from 'lucide-react';
+import { X, Send, Trash2, Maximize2, Minimize2, Paperclip, FileText, Edit } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,6 +38,8 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [analyzingFile, setAnalyzingFile] = useState(false);
+  const [showPromptEditor, setShowPromptEditor] = useState(false);
+  const [editedPrompt, setEditedPrompt] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMemory = async () => {
@@ -90,6 +92,21 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
     ]);
     setInput('');
     setPreview(null);
+  };
+
+  const openPromptEditor = () => {
+    const currentPrompt = localStorage.getItem('systemPrompt') || '';
+    setEditedPrompt(currentPrompt);
+    setShowPromptEditor(true);
+  };
+
+  const savePrompt = () => {
+    localStorage.setItem('systemPrompt', editedPrompt);
+    setShowPromptEditor(false);
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '✅ System instructions updated! I\'ll use these new instructions in our next conversation.'
+    }]);
   };
 
   const executeActions = async (actions: Array<any>) => {
@@ -274,6 +291,24 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`, color: 'white' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Quartermaster AI</h3>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <motion.button
+            onClick={openPromptEditor}
+            title="Edit system instructions"
+            whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.3)' }}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'white',
+              padding: '6px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <Edit size={14} />
+          </motion.button>
           <motion.button
             onClick={() => setIsExpanded(!isExpanded)}
             title={isExpanded ? "Minimize" : "Expand"}
@@ -677,6 +712,97 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
           </motion.button>
         </div>
       </div>
+
+      {/* Prompt Editor Modal */}
+      <AnimatePresence>
+        {showPromptEditor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2000
+            }}
+            onClick={() => setShowPromptEditor(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'white',
+                borderRadius: 12,
+                padding: 24,
+                width: '90%',
+                maxWidth: 600,
+                maxHeight: '80vh',
+                overflow: 'auto'
+              }}
+            >
+              <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: 18, fontWeight: '600', color: COLORS.navyDark }}>
+                Edit System Instructions
+              </h3>
+              <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 12 }}>
+                Write instructions in second-person imperative (e.g., "You are a helpful assistant..."). These instructions define how the AI behaves.
+              </p>
+              <textarea
+                value={editedPrompt}
+                onChange={(e) => setEditedPrompt(e.target.value)}
+                placeholder="You are Quartermaster AI, an intelligent CRM assistant..."
+                rows={12}
+                style={{
+                  width: '100%',
+                  padding: 12,
+                  fontSize: 13,
+                  border: '2px solid #E5E7EB',
+                  borderRadius: 8,
+                  outline: 'none',
+                  fontFamily: 'monospace',
+                  resize: 'vertical'
+                }}
+              />
+              <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setShowPromptEditor(false)}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: 14,
+                    border: '2px solid #E5E7EB',
+                    borderRadius: 8,
+                    background: 'white',
+                    color: '#6B7280',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={savePrompt}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: 14,
+                    fontWeight: '600',
+                    border: 'none',
+                    borderRadius: 8,
+                    background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save Instructions
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
