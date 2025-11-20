@@ -15,12 +15,6 @@ PERSONALITY:
 - Empathetic and supportive
 - Use emojis sparingly for clarity`;
 
-const AVAILABLE_MODELS = [
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast & Cheap)', provider: 'OpenAI' },
-  { value: 'gpt-4o', label: 'GPT-4o (Balanced)', provider: 'OpenAI' },
-  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo (Advanced)', provider: 'OpenAI' },
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Legacy)', provider: 'OpenAI' },
-];
 
 export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const [drive, setDrive] = useState<{ connected: boolean } | null>(null);
@@ -96,9 +90,11 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
               <label style={{ display: 'block', fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
                 AI Model
               </label>
-              <select
+              <input
+                type="text"
                 value={llmModel}
                 onChange={(e) => setLlmModel(e.target.value)}
+                placeholder="gpt-4o-mini"
                 style={{
                   width: '100%',
                   padding: '10px 12px',
@@ -106,18 +102,11 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                   border: '2px solid #E5E7EB',
                   borderRadius: 8,
                   outline: 'none',
-                  cursor: 'pointer',
-                  background: 'white'
+                  fontFamily: 'monospace'
                 }}
-              >
-                {AVAILABLE_MODELS.map(model => (
-                  <option key={model.value} value={model.value}>
-                    {model.label} ({model.provider})
-                  </option>
-                ))}
-              </select>
+              />
               <p style={{ fontSize: 12, color: '#6B7280', marginTop: 4, marginBottom: 0 }}>
-                Choose the AI model for the assistant. Different models have different capabilities and costs.
+                Enter any OpenAI model name (e.g., gpt-4o-mini, gpt-4o, gpt-4-turbo, o1-preview, o1-mini)
               </p>
             </div>
 
@@ -258,6 +247,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #D1D5DB', background: 'white', cursor: 'pointer' }}>Close</button>
+        </div>
         </div>
       </div>
     </div>
