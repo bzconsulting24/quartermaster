@@ -1,6 +1,7 @@
+import { useState, useRef, useEffect } from 'react';
 import type { UserSummary } from '../types';
 import { COLORS } from '../data/uiConstants';
-import { Search, Bell, Bot, Settings } from 'lucide-react';
+import { Search, Bell, Bot, Settings, User, LogOut } from 'lucide-react';
 
 type BZHeaderProps = {
   currentUser?: UserSummary;
@@ -11,9 +12,27 @@ type BZHeaderProps = {
   focusMode?: boolean;
   onToggleFocus?: () => void;
   onOpenSettings?: () => void;
+  onOpenUserSettings?: () => void;
 };
 
-const BZHeader = ({ currentUser = { name: 'User', initials: 'U' }, notifications = 0, setShowNotifications, setShowAssistant, onOpenCommand, focusMode = false, onToggleFocus, onOpenSettings }: BZHeaderProps) => (
+const BZHeader = ({ currentUser = { name: 'User', initials: 'U' }, notifications = 0, setShowNotifications, setShowAssistant, onOpenCommand, focusMode = false, onToggleFocus, onOpenSettings, onOpenUserSettings }: BZHeaderProps) => {
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    if (showUserDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserDropdown]);
+
+  return (
   <div style={{
     background: COLORS.navyDark,
     borderBottom: `1px solid ${COLORS.navyLight}`,
@@ -99,25 +118,155 @@ const BZHeader = ({ currentUser = { name: 'User', initials: 'U' }, notifications
       <button onClick={() => onOpenSettings && onOpenSettings()} style={{ background: 'transparent', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer' }}>
         <Settings size={20} color="white" />
       </button>
-      <div style={{
-        width: '32px',
-        height: '32px',
-        background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.goldDark} 100%)`,
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: COLORS.navyDark,
-        fontSize: '14px',
-        fontWeight: 'bold',
-        marginLeft: '12px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        cursor: 'pointer'
-      }}>
-        {currentUser.initials}
+
+      {/* User Profile Dropdown */}
+      <div ref={dropdownRef} style={{ position: 'relative', marginLeft: '12px' }}>
+        <div
+          onClick={() => setShowUserDropdown(!showUserDropdown)}
+          style={{
+            width: '32px',
+            height: '32px',
+            background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.goldDark} 100%)`,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: COLORS.navyDark,
+            fontSize: '14px',
+            fontWeight: 'bold',
+            boxShadow: showUserDropdown ? '0 0 0 3px rgba(212, 175, 55, 0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            if (!showUserDropdown) {
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showUserDropdown) {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }
+          }}
+        >
+          {currentUser.initials}
+        </div>
+
+        {showUserDropdown && (
+          <div style={{
+            position: 'absolute',
+            top: '45px',
+            right: '0',
+            width: '240px',
+            background: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            overflow: 'hidden',
+            zIndex: 10000
+          }}>
+            {/* User Info Header */}
+            <div style={{
+              padding: '16px',
+              background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
+              borderBottom: '1px solid #E5E7EB'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  background: `linear-gradient(135deg, ${COLORS.gold} 0%, ${COLORS.goldDark} 100%)`,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: COLORS.navyDark,
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }}>
+                  {currentUser.initials}
+                </div>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>
+                    {currentUser.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#D1D5DB' }}>
+                    Administrator
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Menu Items */}
+            <div style={{ padding: '4px 0' }}>
+              <button
+                onClick={() => {
+                  setShowUserDropdown(false);
+                  onOpenUserSettings && onOpenUserSettings();
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: '#374151',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#F3F4F6'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <User size={16} color="#6B7280" />
+                <span>Edit Profile</span>
+              </button>
+
+              <div style={{
+                height: '1px',
+                background: '#E5E7EB',
+                margin: '4px 0'
+              }} />
+
+              <button
+                onClick={() => {
+                  // Add logout functionality here if needed
+                  console.log('Logout clicked');
+                  setShowUserDropdown(false);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  color: '#EF4444',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <LogOut size={16} color="#EF4444" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default BZHeader;

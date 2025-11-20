@@ -286,6 +286,111 @@ router.post(
             results.created++;
             break;
 
+          case 'UPDATE_ACCOUNT':
+            record = await prisma.account.update({
+              where: { id: action.params.accountId },
+              data: action.params.updates
+            });
+            results.createdRecords.push({ type: 'account', record });
+            results.created++;
+            break;
+
+          case 'UPDATE_OPPORTUNITY_STAGE':
+            record = await prisma.opportunity.update({
+              where: { id: action.params.opportunityId },
+              data: { stage: action.params.stage }
+            });
+            results.createdRecords.push({ type: 'opportunity', record });
+            results.created++;
+            break;
+
+          case 'CREATE_TASK':
+            // Try to find account/opportunity if names are provided
+            let taskAccountId = null;
+            let taskOpportunityId = null;
+
+            if (action.params.accountName) {
+              const taskAccount = await prisma.account.findFirst({
+                where: { name: { contains: action.params.accountName, mode: 'insensitive' } }
+              });
+              taskAccountId = taskAccount?.id || null;
+            }
+
+            if (action.params.opportunityName) {
+              const taskOpportunity = await prisma.opportunity.findFirst({
+                where: { name: { contains: action.params.opportunityName, mode: 'insensitive' } }
+              });
+              taskOpportunityId = taskOpportunity?.id || null;
+            }
+
+            record = await prisma.task.create({
+              data: {
+                title: action.params.title,
+                dueDate: action.params.dueDate ? new Date(action.params.dueDate) : new Date(Date.now() + 86400000),
+                priority: action.params.priority || 'MEDIUM',
+                status: 'OPEN',
+                assignedTo: action.params.assignedTo || 'Me',
+                accountId: taskAccountId,
+                opportunityId: taskOpportunityId
+              }
+            });
+            results.createdRecords.push({ type: 'task', record });
+            results.created++;
+            break;
+
+          case 'CREATE_OPPORTUNITY':
+            // Find account for opportunity
+            const oppAccount = await prisma.account.findFirst({
+              where: { name: { contains: action.params.accountName, mode: 'insensitive' } }
+            });
+
+            if (!oppAccount) {
+              throw new Error(`Account not found: ${action.params.accountName}`);
+            }
+
+            record = await prisma.opportunity.create({
+              data: {
+                name: action.params.name,
+                amount: parseInt(action.params.amount) || 0,
+                closeDate: action.params.closeDate ? new Date(action.params.closeDate) : new Date(Date.now() + 30 * 86400000),
+                probability: action.params.probability || 50,
+                owner: action.params.owner || 'Me',
+                stage: action.params.stage || 'Prospecting',
+                accountId: oppAccount.id,
+                email: action.params.email || null,
+                phone: action.params.phone || null
+              }
+            });
+            results.createdRecords.push({ type: 'opportunity', record });
+            results.created++;
+            break;
+
+          case 'SCHEDULE_MEETING':
+          case 'CREATE_EVENT':
+            // Try to find opportunity if name is provided
+            let meetingOpportunityId = null;
+
+            if (action.params.opportunityName) {
+              const meetingOpportunity = await prisma.opportunity.findFirst({
+                where: { name: { contains: action.params.opportunityName, mode: 'insensitive' } }
+              });
+              meetingOpportunityId = meetingOpportunity?.id || null;
+            }
+
+            record = await prisma.activity.create({
+              data: {
+                type: 'MEETING',
+                subject: action.params.subject || 'Meeting',
+                description: action.params.description || null,
+                performedBy: action.params.performedBy || 'Me',
+                performedAt: action.params.meetingTime ? new Date(action.params.meetingTime) : new Date(),
+                opportunityId: meetingOpportunityId
+              }
+            });
+            results.createdRecords.push({ type: 'meeting', record });
+            results.created++;
+            break;
+
           default:
             results.errors.push({
               action,

@@ -72,10 +72,17 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
-  
-  const [showSettings, setShowSettings] = useState(false);
 
-  const currentUser: UserSummary = { name: "Deo Umali", initials: "DU" };
+  const [showSettings, setShowSettings] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Deo Umali');
+  const [editingName, setEditingName] = useState('');
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const currentUser: UserSummary = { name: userName, initials: getInitials(userName) };
 
   // Sync URL changes to tab state
   useEffect(() => {
@@ -169,7 +176,20 @@ export default function App() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#F9FAFB' }}>
-      <BZHeader currentUser={currentUser} notifications={0} setShowNotifications={setShowNotifications} setShowAssistant={setShowAssistant} onOpenCommand={() => setCommandOpen(true)} focusMode={focusMode} onToggleFocus={() => setFocusMode(!focusMode)} onOpenSettings={() => setShowSettings(true)} />
+      <BZHeader
+        currentUser={currentUser}
+        notifications={0}
+        setShowNotifications={setShowNotifications}
+        setShowAssistant={setShowAssistant}
+        onOpenCommand={() => setCommandOpen(true)}
+        focusMode={focusMode}
+        onToggleFocus={() => setFocusMode(!focusMode)}
+        onOpenSettings={() => setShowSettings(true)}
+        onOpenUserSettings={() => {
+          setEditingName(userName);
+          setShowUserModal(true);
+        }}
+      />
       {!focusMode && (<NavigationTabs currentTab={currentTab} setCurrentTab={handleTabChange} />)}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
@@ -244,6 +264,105 @@ export default function App() {
 
       {commandOpen && (<CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} onNavigate={(t)=> handleTabChange(t as any)} />)}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
+      {showUserModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '32px',
+            width: '450px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#0A2540', marginBottom: '8px' }}>
+              User Settings
+            </h2>
+            <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+              Update your display name
+            </p>
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+                Your Name
+              </label>
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setUserName(editingName);
+                    localStorage.setItem('userName', editingName);
+                    setShowUserModal(false);
+                  }
+                  if (e.key === 'Escape') {
+                    setShowUserModal(false);
+                  }
+                }}
+                placeholder="Enter your name"
+                autoFocus
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  fontSize: '14px',
+                  border: '2px solid #E5E7EB',
+                  borderRadius: '8px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#D4AF37'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#E5E7EB'}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowUserModal(false)}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: '8px',
+                  background: 'white',
+                  color: '#6B7280',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setUserName(editingName);
+                  localStorage.setItem('userName', editingName);
+                  setShowUserModal(false);
+                }}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #0A2540 0%, #1E3A5F 100%)',
+                  color: 'white',
+                  cursor: 'pointer'
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

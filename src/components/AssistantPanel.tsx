@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { X, Send, Trash2, Maximize2, Minimize2, Paperclip, FileText } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { motion, AnimatePresence } from 'framer-motion';
 import { COLORS } from '../data/uiConstants';
 
 type AssistantPanelProps = {
@@ -50,6 +53,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
     setInput('');
     setLoading(true);
     try {
+      const userName = localStorage.getItem('userName') || 'User';
       const response = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,7 +61,8 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
           messages: updatedMessages.map(m => ({
             role: m.role,
             content: typeof m.content === 'string' ? m.content : m.content.message || ''
-          }))
+          })),
+          userName
         })
       });
       if (!response.ok) throw new Error('Unable to reach assistant');
@@ -90,11 +95,36 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
       const successCount = data.created || 0;
       const failedCount = data.failed || 0;
 
+      // Format success message with clean summary
+      let summaryMessage = '';
+      if (data.createdRecords?.length > 0) {
+        const summary = data.createdRecords.map((item: any) => {
+          if (item.type === 'account') {
+            return `**${item.record.name}** account ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+          } else if (item.type === 'contact') {
+            return `**${item.record.name}** contact ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+          } else if (item.type === 'invoice') {
+            return `Invoice **${item.record.id}** created for ₱${item.record.amount.toLocaleString()}`;
+          } else if (item.type === 'lead') {
+            return `Lead **${item.record.name}** created`;
+          } else if (item.type === 'opportunity') {
+            return `Opportunity **${item.record.name}** ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+          } else if (item.type === 'task') {
+            return `Task **${item.record.title}** created${item.record.dueDate ? ` (due ${new Date(item.record.dueDate).toLocaleDateString()})` : ''}`;
+          } else if (item.type === 'meeting') {
+            return `Meeting **${item.record.subject}** scheduled${item.record.performedAt ? ` for ${new Date(item.record.performedAt).toLocaleString()}` : ''}`;
+          }
+          return `${item.type} ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+        }).join('\n');
+        summaryMessage = `✅ **Success!**\n\n${summary}`;
+      } else {
+        summaryMessage = `✅ ${successCount} record(s) ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'} successfully${failedCount > 0 ? `. ${failedCount} failed.` : '!'}`;
+      }
+
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: {
-          message: `✅ Created ${successCount} record(s) successfully${failedCount > 0 ? `. ${failedCount} failed.` : '!'}`,
-          data: data.createdRecords?.length > 0 ? { created: data.createdRecords } : undefined
+          message: summaryMessage
         }
       }]);
     } catch (error) {
@@ -211,27 +241,34 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const height = isExpanded ? '700px' : '500px';
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      width,
-      height,
-      background: 'white',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-      zIndex: 1002,
-      display: 'flex',
-      flexDirection: 'column',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      transition: 'width 0.3s ease, height 0.3s ease'
-    }}>
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.95 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width,
+        height,
+        background: 'white',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        zIndex: 1002,
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        transition: 'width 0.3s ease, height 0.3s ease'
+      }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`, color: 'white' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Quartermaster AI</h3>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <button
+          <motion.button
             onClick={() => setIsExpanded(!isExpanded)}
             title={isExpanded ? "Minimize" : "Expand"}
+            whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.3)' }}
+            whileTap={{ scale: 0.9 }}
             style={{
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
@@ -243,11 +280,19 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
               alignItems: 'center'
             }}
           >
-            {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-          </button>
-          <button
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            </motion.div>
+          </motion.button>
+          <motion.button
             onClick={clearChat}
             title="Clear conversation"
+            whileHover={{ scale: 1.1, background: 'rgba(255,255,255,0.3)', rotate: [0, -5, 5, -5, 0] }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ duration: 0.3 }}
             style={{
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
@@ -260,8 +305,15 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
             }}
           >
             <Trash2 size={14} />
-          </button>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'white', padding: '6px' }}><X size={16} /></button>
+          </motion.button>
+          <motion.button
+            onClick={onClose}
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'white', padding: '6px' }}
+          >
+            <X size={16} />
+          </motion.button>
         </div>
       </div>
 
@@ -292,55 +344,101 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
           position: 'relative'
         }}
       >
-        {messages.map((m, i) => {
-          const isStructured = typeof m.content === 'object';
-          const content = isStructured ? m.content : { message: m.content };
+        <AnimatePresence initial={false}>
+          {messages.map((m, i) => {
+            const isStructured = typeof m.content === 'object';
+            const content = isStructured ? m.content : { message: m.content };
 
-          return (
-            <div
-              key={i}
-              style={{
-                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                background: m.role === 'user' ? COLORS.navyDark : '#F3F4F6',
-                color: m.role === 'user' ? 'white' : '#111827',
-                padding: '12px 16px',
-                borderRadius: 12,
-                maxWidth: '85%'
-              }}
-            >
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                style={{
+                  alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                  background: m.role === 'user' ? COLORS.navyDark : '#F3F4F6',
+                  color: m.role === 'user' ? 'white' : '#111827',
+                  padding: '12px 16px',
+                  borderRadius: 12,
+                  maxWidth: '85%'
+                }}
+              >
               {m.role === 'user' ? (
                 <div>{typeof m.content === 'string' ? m.content : content.message}</div>
               ) : (
                 <div>
-                  {content.message && <div style={{ marginBottom: content.insights || content.recommendations ? '12px' : 0 }}>{content.message}</div>}
+                  {content.message && (
+                    <div style={{ marginBottom: content.insights || content.recommendations ? '12px' : 0 }}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content.message}</ReactMarkdown>
+                    </div>
+                  )}
 
                   {content.insights && content.insights.length > 0 && (
-                    <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '6px', borderLeft: '3px solid #3B82F6' }}>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1, duration: 0.3 }}
+                      style={{ marginTop: '8px', padding: '8px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '6px', borderLeft: '3px solid #3B82F6' }}
+                    >
                       <div style={{ fontSize: '11px', fontWeight: '600', color: '#1E40AF', marginBottom: '4px', textTransform: 'uppercase' }}>💡 Insights</div>
-                      <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px' }}>
+                      <div style={{ fontSize: '13px' }}>
                         {content.insights.map((insight: string, idx: number) => (
-                          <li key={idx} style={{ marginBottom: '4px' }}>{insight}</li>
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: -5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.1 + idx * 0.05, duration: 0.2 }}
+                            style={{ marginBottom: '6px' }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{insight}</ReactMarkdown>
+                          </motion.div>
                         ))}
-                      </ul>
-                    </div>
+                      </div>
+                    </motion.div>
                   )}
 
                   {content.recommendations && content.recommendations.length > 0 && (
-                    <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', borderLeft: '3px solid #10B981' }}>
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2, duration: 0.3 }}
+                      style={{ marginTop: '8px', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', borderLeft: '3px solid #10B981' }}
+                    >
                       <div style={{ fontSize: '11px', fontWeight: '600', color: '#065F46', marginBottom: '4px', textTransform: 'uppercase' }}>✅ Recommendations</div>
-                      <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px' }}>
+                      <div style={{ fontSize: '13px' }}>
                         {content.recommendations.map((rec: string, idx: number) => (
-                          <li key={idx} style={{ marginBottom: '4px' }}>{rec}</li>
+                          <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: -5 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 + idx * 0.05, duration: 0.2 }}
+                            style={{ marginBottom: '6px' }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{rec}</ReactMarkdown>
+                          </motion.div>
                         ))}
-                      </ul>
-                    </div>
+                      </div>
+                    </motion.div>
                   )}
 
                   {content.actions && content.actions.length > 0 && (
-                    <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(168, 85, 247, 0.1)', borderRadius: '6px', borderLeft: '3px solid #A855F7' }}>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3, duration: 0.3 }}
+                      style={{ marginTop: '8px', padding: '8px', background: 'rgba(168, 85, 247, 0.1)', borderRadius: '6px', borderLeft: '3px solid #A855F7' }}
+                    >
                       <div style={{ fontSize: '11px', fontWeight: '600', color: '#6B21A8', marginBottom: '8px', textTransform: 'uppercase' }}>⚡ Executable Actions</div>
                       {content.actions.map((action: any, idx: number) => (
-                        <div key={idx} style={{ background: 'white', padding: '8px', borderRadius: '4px', marginBottom: '6px', border: '1px solid #E9D5FF' }}>
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          transition={{ delay: 0.3 + idx * 0.1, duration: 0.2 }}
+                          style={{ background: 'white', padding: '8px', borderRadius: '4px', marginBottom: '6px', border: '1px solid #E9D5FF' }}
+                        >
                           <div style={{ fontWeight: '600', fontSize: '13px', marginBottom: '4px' }}>{action.type}</div>
                           <div style={{ fontSize: '12px', color: '#6B7280', marginBottom: '6px' }}>{action.description}</div>
                           <details style={{ fontSize: '11px', color: '#6B7280' }}>
@@ -349,11 +447,15 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
                               {JSON.stringify(action.params, null, 2)}
                             </pre>
                           </details>
-                        </div>
+                        </motion.div>
                       ))}
-                      <button
+                      <motion.button
                         onClick={() => executeActions(content.actions!)}
                         disabled={executingActions}
+                        whileHover={{ scale: executingActions ? 1 : 1.02, boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)' }}
+                        whileTap={{ scale: executingActions ? 1 : 0.98 }}
+                        animate={executingActions ? { opacity: [0.6, 0.8, 0.6] } : {}}
+                        transition={{ duration: executingActions ? 1.5 : 0.2, repeat: executingActions ? Infinity : 0 }}
                         style={{
                           width: '100%',
                           marginTop: '8px',
@@ -367,9 +469,9 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
                           opacity: executingActions ? 0.6 : 1
                         }}
                       >
-                        {executingActions ? 'Executing...' : `Execute ${content.actions.length} Action(s)`}
-                      </button>
-                    </div>
+                        {executingActions ? '⏳ Executing...' : `Execute ${content.actions.length} Action(s)`}
+                      </motion.button>
+                    </motion.div>
                   )}
 
                   {content.data && Object.keys(content.data).length > 0 && (
@@ -386,34 +488,82 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           );
         })}
-        {loading && <div style={{ color: '#6B7280', fontSize: 14 }}>Thinking…</div>}
+        </AnimatePresence>
+
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{ color: '#6B7280', fontSize: 14, display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <motion.span
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Thinking
+            </motion.span>
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+            >
+              .
+            </motion.span>
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+            >
+              .
+            </motion.span>
+            <motion.span
+              animate={{ opacity: [0, 1, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+            >
+              .
+            </motion.span>
+          </motion.div>
+        )}
         {analyzingFile && (
           <div style={{ color: '#6B7280', fontSize: 14, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileText size={16} />
             <span>Analyzing file...</span>
           </div>
         )}
-        {isDragging && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(240, 249, 255, 0.95)',
-            border: `3px dashed ${COLORS.navyDark}`,
-            borderRadius: '8px',
-            fontSize: '18px',
-            fontWeight: '600',
-            color: COLORS.navyDark,
-            pointerEvents: 'none'
-          }}>
-            📎 Drop file here to analyze
-          </div>
-        )}
+        <AnimatePresence>
+          {isDragging && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{
+                opacity: 1,
+                scale: [0.9, 1.05, 1],
+                y: [0, -5, 0]
+              }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{
+                duration: 0.3,
+                y: { repeat: Infinity, duration: 1.5, ease: 'easeInOut' }
+              }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(240, 249, 255, 0.95)',
+                border: `3px dashed ${COLORS.navyDark}`,
+                borderRadius: '8px',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: COLORS.navyDark,
+                pointerEvents: 'none'
+              }}
+            >
+              📎 Drop file here to analyze
+            </motion.div>
+          )}
+        </AnimatePresence>
         {!!memory.length && (
           <div>
             <div style={{ fontWeight: 600, marginBottom: 6 }}>Recent Memory</div>
@@ -433,10 +583,23 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
             accept=".pdf,.xlsx,.xls,.csv"
             style={{ display: 'none' }}
           />
-          <button
+          <motion.button
             onClick={() => fileInputRef.current?.click()}
             disabled={analyzingFile}
             title="Upload file (PDF, Excel, CSV)"
+            whileHover={analyzingFile ? {} : {
+              scale: 1.05,
+              y: -2,
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+            }}
+            whileTap={analyzingFile ? {} : { scale: 0.95, y: 0 }}
+            animate={analyzingFile ? {
+              opacity: [0.5, 0.7, 0.5]
+            } : {}}
+            transition={{
+              duration: analyzingFile ? 1.5 : 0.2,
+              repeat: analyzingFile ? Infinity : 0
+            }}
             style={{
               padding: '8px',
               borderRadius: 6,
@@ -449,7 +612,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
             }}
           >
             <Paperclip size={16} color={COLORS.navyDark} />
-          </button>
+          </motion.button>
           <input
             type="text"
             placeholder="Ask or describe changes… (or drag files here)"
@@ -467,9 +630,25 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
               opacity: analyzingFile ? 0.5 : 1
             }}
           />
-          <button
+          <motion.button
             onClick={sendMessage}
             disabled={loading || analyzingFile}
+            whileHover={(loading || analyzingFile) ? {} : {
+              scale: 1.05,
+              boxShadow: '0 6px 20px rgba(30, 58, 138, 0.3)'
+            }}
+            whileTap={(loading || analyzingFile) ? {} : {
+              scale: 0.95,
+              rotate: 15
+            }}
+            animate={(loading || analyzingFile) ? {
+              opacity: [0.5, 0.7, 0.5]
+            } : {}}
+            transition={{
+              duration: (loading || analyzingFile) ? 1.5 : 0.2,
+              repeat: (loading || analyzingFile) ? Infinity : 0,
+              rotate: { duration: 0.3 }
+            }}
             style={{
               background: `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
               color: 'white',
@@ -485,10 +664,10 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
             }}
           >
             <Send size={16} />
-          </button>
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

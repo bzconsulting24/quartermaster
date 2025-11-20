@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { TrendingUp, Users, Briefcase, Calendar, CheckSquare, Lightbulb } from 'lucide-react';
+import { TrendingUp, Users, Briefcase, Calendar, CheckSquare } from 'lucide-react';
 import { COLORS, formatCurrency, formatRelativeTime } from '../data/uiConstants';
 import Pomodoro from './Pomodoro';
-import type { Activity, AIInsight } from '../types';
+import TaskCreateModal from './TaskCreateModal';
+import MeetingCreateModal from './MeetingCreateModal';
+import LeadEditModal from './LeadEditModal';
+import WeatherWidget from './WeatherWidget';
+import UpcomingTasksWidget from './UpcomingTasksWidget';
+import type { Activity } from '../types';
 
 type OverviewMetrics = {
   totalRevenue: number;
@@ -30,16 +35,17 @@ const HomeView = () => {
   const [metrics, setMetrics] = useState<OverviewMetrics>(defaultMetrics);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [insights, setInsights] = useState<AIInsight[]>([]);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [userName] = useState(() => localStorage.getItem('userName') || 'Deo');
 
   const loadOverview = useCallback(async () => {
     setLoading(true);
     try {
-      const [overviewRes, insightsRes] = await Promise.all([fetch('/api/overview'), fetch('/api/insights')]);
+      const overviewRes = await fetch('/api/overview');
       if (!overviewRes.ok) throw new Error('Unable to load dashboard metrics');
-      if (!insightsRes.ok) throw new Error('Unable to load insights');
       const data = await overviewRes.json();
-      const insightsData = await insightsRes.json();
       setMetrics({
         totalRevenue: data.totalRevenue ?? 0,
         activeDeals: data.activeDeals ?? 0,
@@ -51,7 +57,6 @@ const HomeView = () => {
         riskAlerts: data.riskAlerts ?? 0
       });
       setActivities(data.activities ?? []);
-      setInsights(insightsData.slice(0, 4));
     } catch (err) {
       console.error(err);
     } finally {
@@ -89,28 +94,15 @@ const HomeView = () => {
   ];
 
   const quickActions = [
-    { label: 'New Opportunity', icon: Briefcase },
+    { label: 'New Lead', icon: Briefcase },
     { label: 'Add Contact', icon: Users },
     { label: 'Schedule Meeting', icon: Calendar },
     { label: 'Create Task', icon: CheckSquare }
   ];
 
-  const runQuickAction = async (label: string) => {
-    if (label === 'New Opportunity') {
-      const name = prompt('Opportunity name?');
-      const accountIdRaw = prompt('Account ID?');
-      const amountRaw = prompt('Amount?');
-      const accountId = accountIdRaw ? parseInt(accountIdRaw, 10) : NaN;
-      const amount = amountRaw ? parseInt(amountRaw, 10) : 0;
-      const closeDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString();
-      if (name && Number.isFinite(accountId)) {
-        await fetch('/api/opportunities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, amount, closeDate, accountId, owner: 'Me' })
-        });
-        window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'opportunities' } }));
-      }
+  const runQuickAction = (label: string) => {
+    if (label === 'New Lead') {
+      setShowLeadModal(true);
       return;
     }
     if (label === 'Add Contact') {
@@ -119,37 +111,26 @@ const HomeView = () => {
       return;
     }
     if (label === 'Schedule Meeting') {
-      await fetch('/api/activities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'MEETING', subject: 'Scheduled meeting', performedBy: 'user' })
-      });
-      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'calendar' } }));
+      setShowMeetingModal(true);
       return;
     }
     if (label === 'Create Task') {
-      const title = prompt('Task title?');
-      if (!title) return;
-      const dueDate = new Date(Date.now() + 86400000).toISOString();
-      await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, dueDate, assignedTo: 'Me' })
-      });
-      window.dispatchEvent(new CustomEvent('app:navigate', { detail: { tab: 'tasks' } }));
+      setShowTaskModal(true);
     }
   };
 
   return (
     <div style={{ padding: '24px', background: '#F9FAFB', minHeight: '100%' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark, marginBottom: '8px' }}>
-          Good morning, Deo
-        </h1>
-        <p style={{ fontSize: '16px', color: '#6B7280' }}>
-          Here's what's happening with your sales today
-        </p>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Pomodoro compact /></div>
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: COLORS.navyDark, marginBottom: '8px' }}>
+            Good morning, {userName}
+          </h1>
+          <p style={{ fontSize: '16px', color: '#6B7280' }}>
+            Here's what's happening with your sales today
+          </p>
+        </div>
+        <Pomodoro compact />
       </div>
 
       <div style={{
@@ -337,85 +318,42 @@ const HomeView = () => {
             </div>
           </div>
 
-          <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <h2
-              style={{
-                fontSize: '20px',
-                fontWeight: '600',
-                color: COLORS.navyDark,
-                marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <Lightbulb size={18} color={COLORS.gold} />
-              AI Insights
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {insights.length === 0 && <div style={{ color: '#6B7280', fontSize: '14px' }}>No insights generated yet.</div>}
-              {insights.map(insight => (
-                <div
-                  key={insight.id}
-                  style={{
-                    padding: '16px',
-                    borderRadius: '8px',
-                    border: `1px solid ${COLORS.navyLight}20`,
-                    background: '#F9FAFB'
-                  }}
-                >
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: COLORS.navyDark, marginBottom: '4px' }}>
-                    {insight.type}
-                  </div>
-                  <div style={{ fontSize: '14px', color: '#374151' }}>{insight.summary}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <WeatherWidget />
 
-          <div style={{ background: 'white', borderRadius: '8px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <h2 style={{
-              fontSize: '20px',
-              fontWeight: '600',
-              color: COLORS.navyDark,
-              marginBottom: '16px',
-              paddingBottom: '12px',
-              borderBottom: `2px solid ${COLORS.gold}`
-            }}>
-              Today's Agenda
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { time: '10:00 AM', title: 'Team Standup' },
-                { time: '2:00 PM', title: 'Client Demo - Acme' },
-                { time: '4:30 PM', title: 'Contract Review' },
-              ].map((event, idx) => (
-                <div
-                  key={idx}
-
-                    style={{
-                    padding: '12px',
-                    background: '#F9FAFB',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    gap: '12px',
-                    alignItems: 'center',
-                    borderLeft: `4px solid ${COLORS.gold}`
-                  }}
-                >
-                  <Calendar size={18} color={COLORS.navyDark} />
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: COLORS.navyDark }}>
-                      {event.title}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{event.time}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <UpcomingTasksWidget />
         </div>
       </div>
+
+      {/* Modals */}
+      {showTaskModal && (
+        <TaskCreateModal
+          onClose={(created) => {
+            setShowTaskModal(false);
+            if (created) {
+              loadOverview();
+            }
+          }}
+        />
+      )}
+      {showMeetingModal && (
+        <MeetingCreateModal
+          onClose={(created) => {
+            setShowMeetingModal(false);
+            if (created) {
+              loadOverview();
+            }
+          }}
+        />
+      )}
+      {showLeadModal && (
+        <LeadEditModal
+          onClose={() => setShowLeadModal(false)}
+          onSaved={() => {
+            setShowLeadModal(false);
+            loadOverview();
+          }}
+        />
+      )}
     </div>
   );
 };

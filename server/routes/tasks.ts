@@ -32,5 +32,24 @@ router.post(
   })
 );
 
+router.patch(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const taskId = parseInt(id, 10);
+    if (isNaN(taskId)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
+    }
+
+    const updates = req.body;
+    const task = await prisma.task.update({
+      where: { id: taskId },
+      data: updates
+    });
+
+    res.json(task);
+  })
+);
+
 export default router;
 

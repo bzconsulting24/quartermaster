@@ -1,4 +1,5 @@
 import { Bot } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { COLORS } from '../data/uiConstants';
 
 type AIFloatingButtonProps = {
@@ -7,8 +8,13 @@ type AIFloatingButtonProps = {
 
 const AIFloatingButton = ({ onClick }: AIFloatingButtonProps) => {
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       style={{
         position: 'fixed',
         bottom: '24px',
@@ -24,21 +30,24 @@ const AIFloatingButton = ({ onClick }: AIFloatingButtonProps) => {
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        zIndex: 1001,
-        transition: 'all 0.3s ease'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.1)';
-        e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.4)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+        zIndex: 1001
       }}
       title="Open Quartermaster AI"
     >
-      <Bot size={28} />
-    </button>
+      <motion.div
+        animate={{
+          scale: [1, 1.05, 1],
+          opacity: [0.8, 1, 0.8]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: 'easeInOut'
+        }}
+      >
+        <Bot size={28} />
+      </motion.div>
+    </motion.button>
   );
 };
 
