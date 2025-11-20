@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, Send, Trash2, Maximize2, Minimize2, Paperclip, FileText, Edit } from 'lucide-react';
+import { X, Send, Trash2, Maximize2, Minimize2, Paperclip, FileText, Pencil } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -307,7 +307,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
               alignItems: 'center'
             }}
           >
-            <Edit size={14} />
+            <Pencil size={14} />
           </motion.button>
           <motion.button
             onClick={() => setIsExpanded(!isExpanded)}
