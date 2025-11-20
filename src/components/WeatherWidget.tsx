@@ -52,9 +52,19 @@ const WeatherWidget = () => {
           fetchWeather(`${latitude},${longitude}`);
         },
         (err) => {
-          console.log('Geolocation denied or failed, using Manila as fallback:', err);
-          // Fallback to Manila if geolocation fails
-          fetchWeather('Manila');
+          console.log('Geolocation denied or failed, detecting location from IP:', err);
+          // Try to detect location from IP
+          fetch('https://ipapi.co/json/')
+            .then(res => res.json())
+            .then(data => {
+              const city = data.city || data.region || 'Manila';
+              console.log('Detected city from IP:', city);
+              fetchWeather(city);
+            })
+            .catch(() => {
+              console.log('IP geolocation failed, using Manila as fallback');
+              fetchWeather('Manila');
+            });
         }
       );
     } else {
