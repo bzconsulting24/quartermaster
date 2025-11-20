@@ -120,25 +120,28 @@ async function crmExecutionAgent(validationResult: any, dataType: string) {
             name: record.name,
             industry: record.industry || null,
             type: record.type || 'SMB',
-            website: record.website || null,
-            description: record.description || null
+            website: record.website || null
           }
         });
       } else if (dataType === 'contacts') {
         // Try to find account by name if provided
-        let accountId = null;
+        let accountId: number | undefined = undefined;
         if (record.accountName) {
           const account = await prisma.account.findFirst({
             where: { name: { contains: record.accountName, mode: 'insensitive' } }
           });
-          accountId = account?.id || null;
+          accountId = account?.id;
+        }
+
+        // Skip if no account found
+        if (!accountId) {
+          throw new Error(`Account not found for contact: ${record.accountName || 'No account specified'}`);
         }
 
         created = await prisma.contact.create({
           data: {
-            firstName: record.firstName,
-            lastName: record.lastName,
-            email: record.email || null,
+            name: record.name || `${record.firstName || ''} ${record.lastName || ''}`.trim() || 'Unknown Contact',
+            email: record.email || 'unknown@example.com',
             phone: record.phone || null,
             title: record.title || null,
             accountId
@@ -147,8 +150,7 @@ async function crmExecutionAgent(validationResult: any, dataType: string) {
       } else if (dataType === 'leads') {
         created = await prisma.lead.create({
           data: {
-            firstName: record.firstName,
-            lastName: record.lastName,
+            name: record.name || record.firstName || 'Unknown Lead',
             email: record.email || null,
             phone: record.phone || null,
             company: record.company || null,
@@ -167,8 +169,10 @@ async function crmExecutionAgent(validationResult: any, dataType: string) {
 
         created = await prisma.invoice.create({
           data: {
+            id: `INV-${Date.now()}`,
             accountId: account.id,
             amount: record.amount,
+            issueDate: new Date(),
             dueDate: record.dueDate ? new Date(record.dueDate) : new Date(),
             status: record.status || 'Draft'
           }

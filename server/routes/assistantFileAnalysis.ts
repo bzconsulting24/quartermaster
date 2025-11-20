@@ -217,8 +217,7 @@ router.post(
                 name: action.params.name,
                 industry: action.params.industry || null,
                 type: action.params.type || 'SMB',
-                website: action.params.website || null,
-                description: action.params.description || null
+                website: action.params.website || null
               }
             });
             results.createdRecords.push({ type: 'account', record });
@@ -227,19 +226,23 @@ router.post(
 
           case 'CREATE_CONTACT':
             // Try to find account if accountName is provided
-            let accountId = null;
+            let accountId: number | undefined = undefined;
             if (action.params.accountName) {
               const account = await prisma.account.findFirst({
                 where: { name: { contains: action.params.accountName, mode: 'insensitive' } }
               });
-              accountId = account?.id || null;
+              accountId = account?.id;
+            }
+
+            // Skip if no account found
+            if (!accountId) {
+              throw new Error(`Account not found for contact: ${action.params.accountName || 'No account specified'}`);
             }
 
             record = await prisma.contact.create({
               data: {
-                firstName: action.params.firstName || action.params.name?.split(' ')[0] || 'Unknown',
-                lastName: action.params.lastName || action.params.name?.split(' ').slice(1).join(' ') || '',
-                email: action.params.email || null,
+                name: action.params.name || `${action.params.firstName || ''} ${action.params.lastName || ''}`.trim() || 'Unknown Contact',
+                email: action.params.email || 'unknown@example.com',
                 phone: action.params.phone || null,
                 title: action.params.title || null,
                 accountId
@@ -252,8 +255,7 @@ router.post(
           case 'CREATE_LEAD':
             record = await prisma.lead.create({
               data: {
-                firstName: action.params.firstName || action.params.name?.split(' ')[0] || 'Unknown',
-                lastName: action.params.lastName || action.params.name?.split(' ').slice(1).join(' ') || '',
+                name: action.params.name || action.params.firstName || 'Unknown Lead',
                 email: action.params.email || null,
                 phone: action.params.phone || null,
                 company: action.params.company || null,
@@ -276,8 +278,10 @@ router.post(
 
             record = await prisma.invoice.create({
               data: {
+                id: `INV-${Date.now()}`,
                 accountId: invoiceAccount.id,
                 amount: parseFloat(action.params.amount),
+                issueDate: new Date(),
                 dueDate: action.params.dueDate ? new Date(action.params.dueDate) : new Date(),
                 status: action.params.status || 'Draft'
               }
