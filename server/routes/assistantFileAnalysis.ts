@@ -132,22 +132,24 @@ Your task is to:
 3. Suggest specific actions to import this data
 4. Return a structured JSON response with actions
 
+BULK IMPORT: This system supports efficient bulk imports for large datasets. When you detect multiple records of the same type (accounts, contacts, leads, invoices, opportunities), create one action per record. The system will automatically group and bulk-insert them using the /execute-plan-bulk endpoint.
+
 IMPORTANT: You MUST respond in valid JSON format with this structure:
 {
-  "message": "I found [X] rows in this ${fileType} file. It appears to contain [description]. Here's what I can do:",
+  "message": "I found [X] rows in this ${fileType} file. It appears to contain [description]. Ready to bulk import these records.",
   "insights": [
     "Detected [number] unique accounts",
     "Found [number] contacts with email addresses",
     "Identified [number] items that already exist in the system"
   ],
   "recommendations": [
-    "Import new accounts first",
-    "Then create associated contacts",
-    "Skip duplicates based on name/email matching"
+    "Bulk import ${Array.isArray(fileData) ? fileData.length : 0} records efficiently",
+    "System will skip duplicates automatically",
+    "Create accounts first, then contacts/invoices that depend on them"
   ],
   "actions": [
     {
-      "type": "CREATE_ACCOUNT" | "CREATE_CONTACT" | "CREATE_INVOICE" | etc,
+      "type": "CREATE_ACCOUNT" | "CREATE_CONTACT" | "CREATE_LEAD" | "CREATE_INVOICE" | "CREATE_OPPORTUNITY",
       "description": "Create account: [Name]",
       "params": {
         // Mapped parameters from file data
@@ -157,7 +159,8 @@ IMPORTANT: You MUST respond in valid JSON format with this structure:
   "data": {
     "totalRows": ${Array.isArray(fileData) ? fileData.length : 0},
     "columns": ["col1", "col2"],
-    "sampleData": {}
+    "sampleData": {},
+    "bulkImportReady": true
   }
 }
 
@@ -434,6 +437,312 @@ router.post(
           error: error.message
         });
       }
+    }
+
+    res.json(results);
+  })
+);
+
+// Bulk execute plan actions (optimized for large datasets)
+router.post(
+  '/execute-plan-bulk',
+  asyncHandler(async (req, res) => {
+    const { actions } = req.body as { actions: any[] };
+
+    if (!actions || !Array.isArray(actions)) {
+      return res.status(400).json({ error: 'Invalid actions array' });
+    }
+
+    const results = {
+      success: true,
+      created: 0,
+      failed: 0,
+      errors: [] as any[],
+      createdRecords: [] as any[]
+    };
+
+    try {
+      // Group actions by type for bulk processing
+      const groupedActions = actions.reduce((acc, action) => {
+        if (!acc[action.type]) {
+          acc[action.type] = [];
+        }
+        acc[action.type].push(action);
+        return acc;
+      }, {} as Record<string, any[]>);
+
+      // 1. Bulk create accounts (no dependencies)
+      if (groupedActions['CREATE_ACCOUNT']) {
+        try {
+          const accountData = groupedActions['CREATE_ACCOUNT'].map(action => ({
+            name: action.params.name,
+            industry: action.params.industry || null,
+            type: action.params.type || 'SMB',
+            website: action.params.website || null
+          }));
+
+          const created = await prisma.account.createMany({
+            data: accountData,
+            skipDuplicates: true // Skip if name already exists
+          });
+
+          results.created += created.count;
+          results.createdRecords.push({ type: 'accounts', count: created.count });
+        } catch (error: any) {
+          results.failed += groupedActions['CREATE_ACCOUNT'].length;
+          results.errors.push({ type: 'CREATE_ACCOUNT', error: error.message });
+        }
+      }
+
+      // 2. Bulk create leads (no dependencies)
+      if (groupedActions['CREATE_LEAD']) {
+        try {
+          const leadData = groupedActions['CREATE_LEAD'].map(action => ({
+            name: action.params.name || action.params.firstName || 'Unknown Lead',
+            email: action.params.email || null,
+            phone: action.params.phone || null,
+            company: action.params.company || null,
+            source: action.params.source || 'Import'
+          }));
+
+          const created = await prisma.lead.createMany({
+            data: leadData,
+            skipDuplicates: true
+          });
+
+          results.created += created.count;
+          results.createdRecords.push({ type: 'leads', count: created.count });
+        } catch (error: any) {
+          results.failed += groupedActions['CREATE_LEAD'].length;
+          results.errors.push({ type: 'CREATE_LEAD', error: error.message });
+        }
+      }
+
+      // 3. Bulk create contacts (requires account lookup)
+      if (groupedActions['CREATE_CONTACT']) {
+        const contactsToCreate = [];
+        const contactErrors = [];
+
+        // Get all unique account names
+        const accountNames = [...new Set(
+          groupedActions['CREATE_CONTACT']
+            .map(action => action.params.accountName)
+            .filter(Boolean)
+        )];
+
+        // Fetch all accounts in one query
+        const accounts = await prisma.account.findMany({
+          where: {
+            name: { in: accountNames as string[] }
+          },
+          select: { id: true, name: true }
+        });
+
+        // Create a map for quick lookup
+        const accountMap = new Map(accounts.map(acc => [acc.name.toLowerCase(), acc.id]));
+
+        // Prepare contact data
+        for (const action of groupedActions['CREATE_CONTACT']) {
+          const accountName = action.params.accountName;
+          const accountId = accountName ? accountMap.get(accountName.toLowerCase()) : undefined;
+
+          if (!accountId) {
+            contactErrors.push({
+              contact: action.params.name,
+              error: `Account not found: ${accountName || 'No account specified'}`
+            });
+            results.failed++;
+            continue;
+          }
+
+          contactsToCreate.push({
+            name: action.params.name || `${action.params.firstName || ''} ${action.params.lastName || ''}`.trim() || 'Unknown Contact',
+            email: action.params.email || 'unknown@example.com',
+            phone: action.params.phone || null,
+            title: action.params.title || null,
+            accountId
+          });
+        }
+
+        // Bulk create contacts
+        if (contactsToCreate.length > 0) {
+          try {
+            const created = await prisma.contact.createMany({
+              data: contactsToCreate,
+              skipDuplicates: true
+            });
+
+            results.created += created.count;
+            results.createdRecords.push({ type: 'contacts', count: created.count });
+          } catch (error: any) {
+            results.failed += contactsToCreate.length;
+            results.errors.push({ type: 'CREATE_CONTACT', error: error.message });
+          }
+        }
+
+        if (contactErrors.length > 0) {
+          results.errors.push({ type: 'CREATE_CONTACT', errors: contactErrors });
+        }
+      }
+
+      // 4. Bulk create invoices (requires account lookup)
+      if (groupedActions['CREATE_INVOICE']) {
+        const invoicesToCreate = [];
+        const invoiceErrors = [];
+
+        // Get all unique account names
+        const accountNames = [...new Set(
+          groupedActions['CREATE_INVOICE']
+            .map(action => action.params.accountName)
+            .filter(Boolean)
+        )];
+
+        // Fetch all accounts in one query
+        const accounts = await prisma.account.findMany({
+          where: {
+            name: { in: accountNames as string[] }
+          },
+          select: { id: true, name: true }
+        });
+
+        const accountMap = new Map(accounts.map(acc => [acc.name.toLowerCase(), acc.id]));
+
+        // Prepare invoice data
+        for (const action of groupedActions['CREATE_INVOICE']) {
+          const accountName = action.params.accountName;
+          const accountId = accountName ? accountMap.get(accountName.toLowerCase()) : undefined;
+
+          if (!accountId) {
+            invoiceErrors.push({
+              invoice: action.params,
+              error: `Account not found: ${accountName}`
+            });
+            results.failed++;
+            continue;
+          }
+
+          invoicesToCreate.push({
+            id: `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            accountId,
+            amount: parseFloat(action.params.amount),
+            issueDate: new Date(),
+            dueDate: action.params.dueDate ? new Date(action.params.dueDate) : new Date(),
+            status: action.params.status || 'Draft'
+          });
+        }
+
+        // Bulk create invoices
+        if (invoicesToCreate.length > 0) {
+          try {
+            const created = await prisma.invoice.createMany({
+              data: invoicesToCreate
+            });
+
+            results.created += created.count;
+            results.createdRecords.push({ type: 'invoices', count: created.count });
+          } catch (error: any) {
+            results.failed += invoicesToCreate.length;
+            results.errors.push({ type: 'CREATE_INVOICE', error: error.message });
+          }
+        }
+
+        if (invoiceErrors.length > 0) {
+          results.errors.push({ type: 'CREATE_INVOICE', errors: invoiceErrors });
+        }
+      }
+
+      // 5. Bulk create opportunities (requires account lookup)
+      if (groupedActions['CREATE_OPPORTUNITY']) {
+        const opportunitiesToCreate = [];
+        const opportunityErrors = [];
+
+        // Get all unique account names
+        const accountNames = [...new Set(
+          groupedActions['CREATE_OPPORTUNITY']
+            .map(action => action.params.accountName)
+            .filter(Boolean)
+        )];
+
+        // Fetch all accounts in one query
+        const accounts = await prisma.account.findMany({
+          where: {
+            name: { in: accountNames as string[] }
+          },
+          select: { id: true, name: true }
+        });
+
+        const accountMap = new Map(accounts.map(acc => [acc.name.toLowerCase(), acc.id]));
+
+        // Prepare opportunity data
+        for (const action of groupedActions['CREATE_OPPORTUNITY']) {
+          const accountName = action.params.accountName;
+          const accountId = accountName ? accountMap.get(accountName.toLowerCase()) : undefined;
+
+          if (!accountId) {
+            opportunityErrors.push({
+              opportunity: action.params.name,
+              error: `Account not found: ${accountName}`
+            });
+            results.failed++;
+            continue;
+          }
+
+          opportunitiesToCreate.push({
+            name: action.params.name,
+            amount: parseInt(action.params.amount) || 0,
+            closeDate: action.params.closeDate ? new Date(action.params.closeDate) : new Date(Date.now() + 30 * 86400000),
+            probability: action.params.probability || 50,
+            owner: action.params.owner || 'Me',
+            stage: action.params.stage || 'Prospecting',
+            accountId,
+            email: action.params.email || null,
+            phone: action.params.phone || null
+          });
+        }
+
+        // Bulk create opportunities
+        if (opportunitiesToCreate.length > 0) {
+          try {
+            const created = await prisma.opportunity.createMany({
+              data: opportunitiesToCreate,
+              skipDuplicates: true
+            });
+
+            results.created += created.count;
+            results.createdRecords.push({ type: 'opportunities', count: created.count });
+          } catch (error: any) {
+            results.failed += opportunitiesToCreate.length;
+            results.errors.push({ type: 'CREATE_OPPORTUNITY', error: error.message });
+          }
+        }
+
+        if (opportunityErrors.length > 0) {
+          results.errors.push({ type: 'CREATE_OPPORTUNITY', errors: opportunityErrors });
+        }
+      }
+
+      // Note: For actions that require complex lookups (CREATE_TASK, SCHEDULE_MEETING, UPDATE_* actions),
+      // fall back to individual processing
+      const complexActions = [
+        ...(groupedActions['CREATE_TASK'] || []),
+        ...(groupedActions['SCHEDULE_MEETING'] || []),
+        ...(groupedActions['CREATE_EVENT'] || []),
+        ...(groupedActions['UPDATE_ACCOUNT'] || []),
+        ...(groupedActions['UPDATE_OPPORTUNITY_STAGE'] || [])
+      ];
+
+      if (complexActions.length > 0) {
+        results.errors.push({
+          type: 'COMPLEX_ACTIONS',
+          message: `${complexActions.length} complex actions were skipped. Use /execute-plan for individual processing.`,
+          count: complexActions.length
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Bulk execution error:', error);
+      results.success = false;
+      results.errors.push({ error: error.message });
     }
 
     res.json(results);

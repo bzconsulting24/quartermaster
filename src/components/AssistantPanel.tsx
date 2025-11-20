@@ -95,7 +95,11 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const executeActions = async (actions: Array<any>) => {
     setExecutingActions(true);
     try {
-      const response = await fetch('/api/assistant/execute-plan', {
+      // Use bulk endpoint for large datasets (10+ actions) or when explicitly marked
+      const useBulkImport = actions.length >= 10;
+      const endpoint = useBulkImport ? '/api/assistant/execute-plan-bulk' : '/api/assistant/execute-plan';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actions })
@@ -107,28 +111,42 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
 
       // Format success message with clean summary
       let summaryMessage = '';
-      if (data.createdRecords?.length > 0) {
-        const summary = data.createdRecords.map((item: any) => {
-          if (item.type === 'account') {
-            return `**${item.record.name}** account ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
-          } else if (item.type === 'contact') {
-            return `**${item.record.name}** contact ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
-          } else if (item.type === 'invoice') {
-            return `Invoice **${item.record.id}** created for ₱${item.record.amount.toLocaleString()}`;
-          } else if (item.type === 'lead') {
-            return `Lead **${item.record.name}** created`;
-          } else if (item.type === 'opportunity') {
-            return `Opportunity **${item.record.name}** ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
-          } else if (item.type === 'task') {
-            return `Task **${item.record.title}** created${item.record.dueDate ? ` (due ${new Date(item.record.dueDate).toLocaleDateString()})` : ''}`;
-          } else if (item.type === 'meeting') {
-            return `Meeting **${item.record.subject}** scheduled${item.record.performedAt ? ` for ${new Date(item.record.performedAt).toLocaleString()}` : ''}`;
-          }
-          return `${item.type} ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
-        }).join('\n');
-        summaryMessage = `✅ **Success!**\n\n${summary}`;
+
+      if (useBulkImport) {
+        // Bulk import response format
+        if (data.createdRecords?.length > 0) {
+          const summary = data.createdRecords.map((item: any) => {
+            return `**${item.count}** ${item.type} created`;
+          }).join('\n');
+          summaryMessage = `✅ **Bulk Import Complete!**\n\n${summary}\n\n${failedCount > 0 ? `⚠️ ${failedCount} record(s) failed (check logs for details)` : ''}`;
+        } else {
+          summaryMessage = `✅ Bulk import completed: ${successCount} record(s) created${failedCount > 0 ? `, ${failedCount} failed` : '!'}`;
+        }
       } else {
-        summaryMessage = `✅ ${successCount} record(s) ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'} successfully${failedCount > 0 ? `. ${failedCount} failed.` : '!'}`;
+        // Individual action response format
+        if (data.createdRecords?.length > 0) {
+          const summary = data.createdRecords.map((item: any) => {
+            if (item.type === 'account') {
+              return `**${item.record.name}** account ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+            } else if (item.type === 'contact') {
+              return `**${item.record.name}** contact ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+            } else if (item.type === 'invoice') {
+              return `Invoice **${item.record.id}** created for ₱${item.record.amount.toLocaleString()}`;
+            } else if (item.type === 'lead') {
+              return `Lead **${item.record.name}** created`;
+            } else if (item.type === 'opportunity') {
+              return `Opportunity **${item.record.name}** ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+            } else if (item.type === 'task') {
+              return `Task **${item.record.title}** created${item.record.dueDate ? ` (due ${new Date(item.record.dueDate).toLocaleDateString()})` : ''}`;
+            } else if (item.type === 'meeting') {
+              return `Meeting **${item.record.subject}** scheduled${item.record.performedAt ? ` for ${new Date(item.record.performedAt).toLocaleString()}` : ''}`;
+            }
+            return `${item.type} ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'}`;
+          }).join('\n');
+          summaryMessage = `✅ **Success!**\n\n${summary}`;
+        } else {
+          summaryMessage = `✅ ${successCount} record(s) ${actions[0].type.includes('UPDATE') ? 'updated' : 'created'} successfully${failedCount > 0 ? `. ${failedCount} failed.` : '!'}`;
+        }
       }
 
       setMessages(prev => [...prev, {
