@@ -26,7 +26,7 @@ type ChatMessage = {
 
 const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: 'Hi! I\'m Quartermaster AI. I can help you with your CRM - create invoices, add contacts, check your pipeline, and more. You can chat with me in English or Tagalog! 🇵🇭' }
+    { role: 'assistant', content: 'Hi! I\'m Quartermaster AI, your official navigator. You can ask me to create invoices, add contacts, check your pipeline, and more -- in English or Tagalog.' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -86,7 +86,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
 
   const clearChat = () => {
     setMessages([
-      { role: 'assistant', content: 'Hi! I\'m Quartermaster AI. I can help you with your CRM - create invoices, add contacts, check your pipeline, and more. You can chat with me in English or Tagalog! 🇵🇭' }
+      { role: 'assistant', content: 'Hi! I\'m Quartermaster AI, your official navigator. You can ask me to create invoices, add contacts, check your pipeline, and more -- in English or Tagalog.' }
     ]);
     setInput('');
     setPreview(null);
