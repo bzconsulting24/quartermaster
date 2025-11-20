@@ -64,13 +64,23 @@ const buildResponse = (prompt: string, opportunitySummary?: string, metrics?: Re
 router.post(
   '/',
   asyncHandler(async (req, res) => {
-    const { messages, userName } = req.body as { messages?: Array<{ role: string; content: string }>; userName?: string };
+    const { messages, userName, model, systemPrompt, temperature, maxTokens } = req.body as {
+      messages?: Array<{ role: string; content: string }>;
+      userName?: string;
+      model?: string;
+      systemPrompt?: string;
+      temperature?: number;
+      maxTokens?: number;
+    };
 
     if (!messages || !messages.length) {
       return res.status(400).json({ message: 'messages array is required' });
     }
 
     const userDisplayName = userName || 'User';
+    const llmModel = model || 'gpt-4o-mini';
+    const llmTemperature = temperature !== undefined ? temperature : 0.7;
+    const llmMaxTokens = maxTokens || 1000;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
@@ -214,19 +224,8 @@ router.post(
       }))
     };
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: `You are Quartermaster AI, a warm, empathetic, and multilingual CRM assistant. You speak both English and Tagalog fluently and respond in the language the user uses.
+    // Build system prompt
+    const defaultSystemPrompt = `You are Quartermaster AI, a warm, empathetic, and multilingual CRM assistant. You speak both English and Tagalog fluently and respond in the language the user uses.
 
 You are assisting ${userDisplayName}. When appropriate, you can refer to them by name to make the conversation more personal.
 
@@ -358,12 +357,30 @@ GOOD Example (with MARKDOWN):
   ]
 }
 
-Be concise, friendly, and action-oriented. Provide specific insights and actionable recommendations based on the actual CRM data. Always match the user's language and emotional tone.`
+Be concise, friendly, and action-oriented. Provide specific insights and actionable recommendations based on the actual CRM data. Always match the user's language and emotional tone.`;
+
+    // Use custom system prompt if provided, otherwise use default
+    const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: llmModel,
+          messages: [
+            {
+              role: 'system',
+              content: finalSystemPrompt
             },
             ...messages
           ],
+          temperature: llmTemperature,
           response_format: { type: "json_object" },
-          max_completion_tokens: 1000
+          max_completion_tokens: llmMaxTokens
         })
       });
 

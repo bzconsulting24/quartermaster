@@ -54,6 +54,12 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
     setLoading(true);
     try {
       const userName = localStorage.getItem('userName') || 'User';
+      // Read LLM settings from localStorage
+      const llmModel = localStorage.getItem('llmModel') || 'gpt-4o-mini';
+      const systemPrompt = localStorage.getItem('systemPrompt') || undefined;
+      const temperature = parseFloat(localStorage.getItem('temperature') || '0.7');
+      const maxTokens = parseInt(localStorage.getItem('maxTokens') || '1000');
+
       const response = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +68,11 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
             role: m.role,
             content: typeof m.content === 'string' ? m.content : m.content.message || ''
           })),
-          userName
+          userName,
+          model: llmModel,
+          systemPrompt,
+          temperature,
+          maxTokens
         })
       });
       if (!response.ok) throw new Error('Unable to reach assistant');

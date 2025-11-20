@@ -38,7 +38,19 @@
       "Bash(git show:*)",
       "Bash(git pull:*)",
       "Bash(docker pull:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(netstat:*)",
+      "Bash(cmd //c taskkill //PID 22136 //F)",
+      "Bash(cmd //c taskkill //PID 31316 //F)",
+      "Bash(npm run server:dev:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node --version:*)",
+      "Bash(npm run build:server:*)",
+      "Bash(cmd //c \"taskkill //F //IM node.exe //T 2>nul\")",
+      "Bash(cmd //c taskkill //PID 44208 //F)",
+      "Bash(netsh advfirewall firewall show rule name=\"Vite Dev Server\")",
+      "Bash(netsh advfirewall firewall add rule:*)",
+      "Bash(docker start:*)"
     ],
     "deny": [],
     "ask": []
