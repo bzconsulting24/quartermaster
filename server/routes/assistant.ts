@@ -1,9 +1,17 @@
 import { Router } from 'express';
-import prisma from '../prismaClient';
+import multer from 'multer';
+import * as XLSX from 'xlsx';
+import prisma from '../prismaClient.js';
 import { asyncHandler } from './helpers.js';
 import { AIInsightType } from '@prisma/client';
 
 const router = Router();
+
+// Configure multer for file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 const summarizeOpportunity = (opportunity: any) => {
   const parts = [
@@ -643,6 +651,169 @@ router.post(
     }
 
     res.json({ results, executedCount: results.filter(r => r.success).length });
+  })
+);
+
+// Helper: Parse Excel/CSV files
+function parseFile(buffer: Buffer, filename: string): any[] {
+  const extension = filename.split('.').pop()?.toLowerCase();
+
+  if (extension === 'xlsx' || extension === 'xls' || extension === 'csv') {
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    return XLSX.utils.sheet_to_json(sheet);
+  }
+
+  return [];
+}
+
+// Helper: Convert JSON array to CSV string
+function jsonToCSV(data: any[]): string {
+  if (!data || data.length === 0) return '';
+
+  const headers = Object.keys(data[0]);
+  const csvRows = [
+    headers.join(','),
+    ...data.map(row =>
+      headers.map(header => {
+        const value = row[header];
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value ?? '';
+      }).join(',')
+    )
+  ];
+
+  return csvRows.join('\n');
+}
+
+// Chat with file attachment
+router.post(
+  '/with-file',
+  upload.single('file'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const messages = JSON.parse(req.body.messages || '[]');
+    const userName = req.body.userName || 'User';
+    const model = req.body.model || 'gpt-4o-mini';
+    const systemPrompt = req.body.systemPrompt;
+    const temperature = parseFloat(req.body.temperature || '0.7');
+    const maxTokens = parseInt(req.body.maxTokens || '2000');
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ message: 'OpenAI API key not configured' });
+    }
+
+    try {
+      // Parse file to CSV
+      const fileData = parseFile(req.file.buffer, req.file.originalname);
+      const csvData = jsonToCSV(fileData.slice(0, 100)); // First 100 rows
+
+      // Get CRM context
+      const [accounts, contacts] = await Promise.all([
+        prisma.account.findMany({ select: { id: true, name: true, industry: true } }),
+        prisma.contact.findMany({ select: { id: true, name: true, email: true, accountId: true } })
+      ]);
+
+      // Build file context prompt
+      const fileContext = `
+
+📎 **Attached File Analysis:**
+File: ${req.file.originalname}
+Type: ${req.file.mimetype}
+Rows: ${fileData.length}
+
+**File Data (CSV format, first 100 rows):**
+\`\`\`csv
+${csvData}
+\`\`\`
+
+**Current CRM Context:**
+- Existing accounts: ${accounts.length}
+- Existing contacts: ${contacts.length}
+
+**Available Actions:**
+You can suggest actions to import this data. Use these exact field names:
+
+**CREATE_ACCOUNT:** name, industry, type (Enterprise/MidMarket/SMB), website
+**CREATE_CONTACT:** name, email, phone, title, accountName
+**CREATE_LEAD:** name, email, phone, company, source
+**CREATE_INVOICE:** accountName, amount, dueDate, status
+**CREATE_OPPORTUNITY:** name, amount, closeDate, probability, owner, stage, accountName
+
+CRITICAL: Use "accountName" for contacts/invoices (NOT "account"). Do NOT include unsupported fields like owner, revenue, or description for accounts.
+
+Return JSON with this structure:
+{
+  "message": "Analysis and recommendations",
+  "insights": ["insight 1", "insight 2"],
+  "recommendations": ["rec 1", "rec 2"],
+  "actions": [
+    {
+      "type": "CREATE_ACCOUNT",
+      "description": "Create account: Company Name",
+      "params": { "name": "Company Name", "industry": "Industry" }
+    }
+  ]
+}`;
+
+      // Add file context to the last message
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage) {
+        lastMessage.content += fileContext;
+      }
+
+      const defaultSystemPrompt = `You are Quartermaster AI, an intelligent CRM assistant for a sales team in the Philippines. You help manage accounts, contacts, opportunities, leads, invoices, tasks, and provide insights.
+
+When analyzing files, be thorough and suggest concrete actions the user can take to import the data. Always use the exact field names specified and avoid hallucinating extra fields.
+
+Respond in JSON format when suggesting actions. Be conversational and helpful in Filipino or English based on user preference.`;
+
+      const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: finalSystemPrompt },
+            ...messages
+          ],
+          temperature,
+          response_format: { type: 'json_object' },
+          max_completion_tokens: maxTokens
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('OpenAI API request failed');
+      }
+
+      const data = await response.json() as any;
+      const content = data.choices?.[0]?.message?.content || '{"message":"Sorry, I could not analyze that file."}';
+
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(content);
+      } catch {
+        parsedResponse = { message: content };
+      }
+
+      res.json(parsedResponse);
+    } catch (error) {
+      console.error('File analysis error:', error);
+      res.status(500).json({ message: 'Failed to analyze file' });
+    }
   })
 );
 

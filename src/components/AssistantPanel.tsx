@@ -37,7 +37,6 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [analyzingFile, setAnalyzingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMemory = async () => {
@@ -46,35 +45,66 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
   useEffect(() => { void loadMemory(); }, []);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-    const newMessage: ChatMessage = { role: 'user', content: input.trim() };
+    if (!input.trim() && !uploadedFile) return;
+
+    const userMessageContent = uploadedFile
+      ? `${input.trim() || 'Analyze this file and suggest actions'}\n\n📎 Attached: ${uploadedFile.name}`
+      : input.trim();
+
+    const newMessage: ChatMessage = { role: 'user', content: userMessageContent };
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
     setInput('');
     setLoading(true);
+
     try {
       const userName = localStorage.getItem('userName') || 'User';
-      // Read LLM settings from localStorage
       const llmModel = localStorage.getItem('llmModel') || 'gpt-4o-mini';
       const systemPrompt = localStorage.getItem('systemPrompt') || undefined;
       const temperature = parseFloat(localStorage.getItem('temperature') || '0.7');
       const maxTokens = parseInt(localStorage.getItem('maxTokens') || '1000');
 
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: updatedMessages.map(m => ({
-            role: m.role,
-            content: typeof m.content === 'string' ? m.content : m.content.message || ''
-          })),
-          userName,
-          model: llmModel,
-          systemPrompt,
-          temperature,
-          maxTokens
-        })
-      });
+      let response;
+
+      if (uploadedFile) {
+        // Send file as multipart/form-data with message
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('messages', JSON.stringify(updatedMessages.map(m => ({
+          role: m.role,
+          content: typeof m.content === 'string' ? m.content : m.content.message || ''
+        }))));
+        formData.append('userName', userName);
+        formData.append('model', llmModel);
+        if (systemPrompt) formData.append('systemPrompt', systemPrompt);
+        formData.append('temperature', temperature.toString());
+        formData.append('maxTokens', maxTokens.toString());
+
+        response = await fetch('/api/assistant/with-file', {
+          method: 'POST',
+          body: formData
+        });
+
+        setUploadedFile(null); // Clear file after sending
+      } else {
+        // Send regular JSON message
+        response = await fetch('/api/assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: updatedMessages.map(m => ({
+              role: m.role,
+              content: typeof m.content === 'string' ? m.content : m.content.message || ''
+            })),
+            userName,
+            model: llmModel,
+            systemPrompt,
+            temperature,
+            maxTokens
+          })
+        });
+      }
+
       if (!response.ok) throw new Error('Unable to reach assistant');
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data }]);
@@ -214,7 +244,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
     }
   };
 
-  const handleFileSelect = async (file: File) => {
+  const handleFileSelect = (file: File) => {
     const validTypes = [
       'application/pdf',
       'application/vnd.ms-excel',
@@ -230,39 +260,8 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
       return;
     }
 
+    // Just store the file - it will be sent when user clicks Send
     setUploadedFile(file);
-    await analyzeFile(file);
-  };
-
-  const analyzeFile = async (file: File) => {
-    setAnalyzingFile(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('prompt', input || 'Analyze this file and suggest what actions I should take with this data in my CRM.');
-
-      const response = await fetch('/api/assistant/analyze-file', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) throw new Error('Failed to analyze file');
-
-      const data = await response.json();
-      setMessages(prev => [...prev,
-        { role: 'user', content: `📎 Uploaded: ${file.name}` },
-        { role: 'assistant', content: data }
-      ]);
-      setUploadedFile(null);
-      setInput('');
-    } catch (error) {
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: '❌ Failed to analyze file. Please try again.'
-      }]);
-    } finally {
-      setAnalyzingFile(false);
-    }
   };
 
   const width = isExpanded ? '600px' : '380px';
@@ -553,12 +552,6 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
             </motion.span>
           </motion.div>
         )}
-        {analyzingFile && (
-          <div style={{ color: '#6B7280', fontSize: 14, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={16} />
-            <span>Analyzing file...</span>
-          </div>
-        )}
         <AnimatePresence>
           {isDragging && (
             <motion.div
@@ -603,6 +596,43 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
       </div>
 
       <div style={{ padding: '12px', borderTop: '1px solid #E5E7EB' }}>
+        {uploadedFile && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{
+              marginBottom: '8px',
+              padding: '8px 12px',
+              background: '#F0F9FF',
+              border: '1px solid #BAE6FD',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px'
+            }}
+          >
+            <FileText size={16} color="#0284C7" />
+            <span style={{ flex: 1, color: '#0369A1', fontWeight: '500' }}>{uploadedFile.name}</span>
+            <motion.button
+              onClick={() => setUploadedFile(null)}
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#0369A1'
+              }}
+            >
+              <X size={14} />
+            </motion.button>
+          </motion.div>
+        )}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             type="file"
@@ -613,41 +643,34 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
           />
           <motion.button
             onClick={() => fileInputRef.current?.click()}
-            disabled={analyzingFile}
+            disabled={loading}
             title="Upload file (PDF, Excel, CSV)"
-            whileHover={analyzingFile ? {} : {
+            whileHover={loading ? {} : {
               scale: 1.05,
               y: -2,
               boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
             }}
-            whileTap={analyzingFile ? {} : { scale: 0.95, y: 0 }}
-            animate={analyzingFile ? {
-              opacity: [0.5, 0.7, 0.5]
-            } : {}}
-            transition={{
-              duration: analyzingFile ? 1.5 : 0.2,
-              repeat: analyzingFile ? Infinity : 0
-            }}
+            whileTap={loading ? {} : { scale: 0.95, y: 0 }}
             style={{
               padding: '8px',
               borderRadius: 6,
-              border: '1px solid #D1D5DB',
-              background: 'white',
-              cursor: analyzingFile ? 'not-allowed' : 'pointer',
+              border: uploadedFile ? `1px solid #0284C7` : '1px solid #D1D5DB',
+              background: uploadedFile ? '#F0F9FF' : 'white',
+              cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              opacity: analyzingFile ? 0.5 : 1
+              opacity: loading ? 0.5 : 1
             }}
           >
-            <Paperclip size={16} color={COLORS.navyDark} />
+            <Paperclip size={16} color={uploadedFile ? '#0284C7' : COLORS.navyDark} />
           </motion.button>
           <input
             type="text"
-            placeholder="Ask or describe changes… (or drag files here)"
+            placeholder={uploadedFile ? "Add a message (optional)..." : "Ask or describe changes… (or drag files here)"}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); }}
-            disabled={analyzingFile}
+            disabled={loading}
             style={{
               flex: 1,
               padding: '10px 12px',
@@ -655,26 +678,26 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
               borderRadius: 6,
               fontSize: 14,
               outline: 'none',
-              opacity: analyzingFile ? 0.5 : 1
+              opacity: loading ? 0.5 : 1
             }}
           />
           <motion.button
             onClick={sendMessage}
-            disabled={loading || analyzingFile}
-            whileHover={(loading || analyzingFile) ? {} : {
+            disabled={loading}
+            whileHover={loading ? {} : {
               scale: 1.05,
               boxShadow: '0 6px 20px rgba(30, 58, 138, 0.3)'
             }}
-            whileTap={(loading || analyzingFile) ? {} : {
+            whileTap={loading ? {} : {
               scale: 0.95,
               rotate: 15
             }}
-            animate={(loading || analyzingFile) ? {
+            animate={loading ? {
               opacity: [0.5, 0.7, 0.5]
             } : {}}
             transition={{
-              duration: (loading || analyzingFile) ? 1.5 : 0.2,
-              repeat: (loading || analyzingFile) ? Infinity : 0,
+              duration: loading ? 1.5 : 0.2,
+              repeat: loading ? Infinity : 0,
               rotate: { duration: 0.3 }
             }}
             style={{
@@ -684,11 +707,11 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
               borderRadius: 6,
               padding: '0 14px',
               height: '40px',
-              cursor: (loading || analyzingFile) ? 'not-allowed' : 'pointer',
+              cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: (loading || analyzingFile) ? 0.5 : 1
+              opacity: loading ? 0.5 : 1
             }}
           >
             <Send size={16} />
