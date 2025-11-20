@@ -41,6 +41,28 @@ function parseCSVFile(buffer: Buffer): any[] {
   return XLSX.utils.sheet_to_json(sheet);
 }
 
+// Convert JSON array to CSV string (easier for LLM to read)
+function jsonToCSV(data: any[]): string {
+  if (!data || data.length === 0) return '';
+
+  const headers = Object.keys(data[0]);
+  const csvRows = [
+    headers.join(','), // Header row
+    ...data.map(row =>
+      headers.map(header => {
+        const value = row[header];
+        // Escape values that contain commas or quotes
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value ?? '';
+      }).join(',')
+    )
+  ];
+
+  return csvRows.join('\n');
+}
+
 // Parse PDF file (basic text extraction)
 async function parsePDFFile(buffer: Buffer): Promise<string> {
   // For now, return a message that PDF parsing is not fully implemented
@@ -92,10 +114,13 @@ router.post(
       ]);
 
       // Use AI to analyze file and suggest actions
+      // Convert to CSV for better LLM readability and token efficiency
+      const csvData = Array.isArray(fileData) ? jsonToCSV(fileData.slice(0, 50)) : String(fileData);
+
       const systemPrompt = `You are Quartermaster AI, analyzing a ${fileType} file uploaded by the user.
 
-File data (first 50 rows):
-${JSON.stringify(Array.isArray(fileData) ? fileData.slice(0, 50) : fileData, null, 2)}
+File data (first 50 rows in CSV format):
+${csvData}
 
 Current CRM context:
 - Existing accounts: ${accounts.length}
