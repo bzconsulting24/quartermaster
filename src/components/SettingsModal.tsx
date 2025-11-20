@@ -341,8 +341,18 @@ Return ONLY the improved system instructions, nothing else. Use second person im
             </div>
 
             <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>
-              Get AI help to improve your system instructions. The AI will rewrite your instructions in <strong>second person imperative format</strong> (e.g., "Manage customer data" not "You manage customer data").
+              Get AI help to improve your system instructions. The AI will analyze what you currently have written and rewrite it in <strong>second person imperative format</strong> (e.g., "Manage customer data" not "You manage customer data").
             </p>
+
+            {/* Preview of current instructions */}
+            <div style={{ marginBottom: 16, padding: 12, background: '#F3F4F6', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+              <div style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 6 }}>
+                📝 Your Current Instructions ({systemPrompt.length} characters):
+              </div>
+              <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#374151', maxHeight: 100, overflow: 'auto', whiteSpace: 'pre-wrap' }}>
+                {systemPrompt.substring(0, 300)}{systemPrompt.length > 300 ? '...' : ''}
+              </div>
+            </div>
 
             {/* Optional user input */}
             <div style={{ marginBottom: 16 }}>
