@@ -6,6 +6,11 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    allowedHosts: [
+      '.ts.net', // Allow all Tailscale hosts
+      'localhost',
+      '.local'
+    ],
     proxy: {
       '/api': {
         // Use backend service name when running in Docker, localhost otherwise
