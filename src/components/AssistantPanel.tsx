@@ -107,6 +107,9 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
 
       if (!response.ok) throw new Error('Unable to reach assistant');
       const data = await response.json();
+      console.log('📥 File analysis response:', data);
+      console.log('📥 Response type:', typeof data);
+      console.log('📥 Has actions?', data?.actions?.length);
       setMessages(prev => [...prev, { role: 'assistant', content: data }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I could not process that request.' }]);
@@ -375,6 +378,9 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
           {messages.map((m, i) => {
             const isStructured = typeof m.content === 'object';
             const content = isStructured ? m.content : { message: m.content };
+            if (m.role === 'assistant' && i === messages.length - 1) {
+              console.log('🎨 Rendering message:', { isStructured, hasActions: content?.actions?.length, content });
+            }
 
             return (
               <motion.div
