@@ -78,7 +78,8 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
         formData.append('model', llmModel);
         if (systemPrompt) formData.append('systemPrompt', systemPrompt);
         formData.append('temperature', temperature.toString());
-        formData.append('maxTokens', maxTokens.toString());
+        // Use higher token limit for file analysis (bulk imports need more tokens)
+        formData.append('maxTokens', '16000');
 
         response = await fetch('/api/assistant/with-file', {
           method: 'POST',
