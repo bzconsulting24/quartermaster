@@ -703,7 +703,7 @@ router.post(
     const model = req.body.model || 'gpt-4o-mini';
     const systemPrompt = req.body.systemPrompt;
     const temperature = parseFloat(req.body.temperature || '0.7');
-    const maxTokens = parseInt(req.body.maxTokens || '2000');
+    const maxTokens = parseInt(req.body.maxTokens || '8000'); // Higher limit for bulk imports
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
