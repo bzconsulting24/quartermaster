@@ -524,32 +524,62 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            style={{ color: '#6B7280', fontSize: 14, display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 16px',
+              background: '#F3F4F6',
+              borderRadius: 12,
+              maxWidth: '85%'
+            }}
           >
-            <motion.span
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              Thinking
-            </motion.span>
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-            >
-              .
-            </motion.span>
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-            >
-              .
-            </motion.span>
-            <motion.span
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
-            >
-              .
-            </motion.span>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: COLORS.navyDark
+                }}
+              />
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 0.2
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: COLORS.navyDark
+                }}
+              />
+              <motion.div
+                animate={{ y: [0, -8, 0] }}
+                transition={{
+                  duration: 0.6,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                  delay: 0.4
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: COLORS.navyDark
+                }}
+              />
+            </div>
           </motion.div>
         )}
         <AnimatePresence>
