@@ -20,11 +20,11 @@ const worker = new Worker<EmbeddingJobData>(
     try {
       switch (job.data.jobType) {
         case 'EMBED_DOCUMENT':
-          return await processDocumentEmbedding(job);
+          return await processDocumentEmbedding(job as Job<EmbedDocumentJobData>);
         case 'EMBED_TEXT':
-          return await processTextEmbedding(job);
+          return await processTextEmbedding(job as Job<EmbedTextJobData>);
         case 'REINDEX_DOCUMENT':
-          return await processDocumentReindex(job);
+          return await processDocumentReindex(job as Job<ReindexDocumentJobData>);
         default:
           throw new Error(`Unknown job type: ${(job.data as any).jobType}`);
       }
@@ -56,7 +56,7 @@ async function processDocumentEmbedding(job: Job<EmbedDocumentJobData>) {
   });
 
   // Emit progress event
-  emitAppEvent('embedding.started', { documentId, jobId: job.id });
+  emitAppEvent({ type: 'embedding.started', payload: { documentId, jobId: job.id } });
 
   try {
     // Step 1: Chunk the content
@@ -145,12 +145,15 @@ async function processDocumentEmbedding(job: Job<EmbedDocumentJobData>) {
     await job.updateProgress(100);
 
     // Emit completion event
-    emitAppEvent('embedding.completed', {
-      documentId,
-      jobId: job.id,
-      chunkCount: chunks.length,
-      totalTokens: embeddingResult.totalTokens,
-      cost: embeddingResult.costs
+    emitAppEvent({
+      type: 'embedding.completed',
+      payload: {
+        documentId,
+        jobId: job.id,
+        chunkCount: chunks.length,
+        totalTokens: embeddingResult.totalTokens,
+        cost: embeddingResult.costs
+      }
     });
 
     return {
@@ -168,10 +171,13 @@ async function processDocumentEmbedding(job: Job<EmbedDocumentJobData>) {
     });
 
     // Emit failure event
-    emitAppEvent('embedding.failed', {
-      documentId,
-      jobId: job.id,
-      error: error.message
+    emitAppEvent({
+      type: 'embedding.failed',
+      payload: {
+        documentId,
+        jobId: job.id,
+        error: error.message
+      }
     });
 
     throw error;
@@ -184,7 +190,7 @@ async function processDocumentEmbedding(job: Job<EmbedDocumentJobData>) {
 async function processTextEmbedding(job: Job<EmbedTextJobData>) {
   const { content, accountId, opportunityId, sourceType, metadata } = job.data;
 
-  emitAppEvent('embedding.started', { jobId: job.id, type: 'text' });
+  emitAppEvent({ type: 'embedding.started', payload: { jobId: job.id, embeddingType: 'text' } });
 
   try {
     // Chunk the text
@@ -229,10 +235,13 @@ async function processTextEmbedding(job: Job<EmbedTextJobData>) {
       FROM json_populate_recordset(null::"DocumentChunk", ${JSON.stringify(chunksToCreate)}::json) c
     `;
 
-    emitAppEvent('embedding.completed', {
-      jobId: job.id,
-      type: 'text',
-      chunkCount: chunks.length
+    emitAppEvent({
+      type: 'embedding.completed',
+      payload: {
+        jobId: job.id,
+        embeddingType: 'text',
+        chunkCount: chunks.length
+      }
     });
 
     return {
@@ -242,10 +251,13 @@ async function processTextEmbedding(job: Job<EmbedTextJobData>) {
       cost: embeddingResult.costs
     };
   } catch (error: any) {
-    emitAppEvent('embedding.failed', {
-      jobId: job.id,
-      type: 'text',
-      error: error.message
+    emitAppEvent({
+      type: 'embedding.failed',
+      payload: {
+        jobId: job.id,
+        embeddingType: 'text',
+        error: error.message
+      }
     });
 
     throw error;
