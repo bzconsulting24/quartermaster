@@ -214,6 +214,7 @@ const UpcomingTasksWidget = () => {
                     gap: '12px',
                     alignItems: 'center',
                     cursor: 'grab',
+                    boxShadow: '0 0px 0px rgba(0,0,0,0)',
                     opacity: draggedTaskId === task.id ? 0.6 : 1
                   }}
                 >

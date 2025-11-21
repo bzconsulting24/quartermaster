@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { COLORS } from '../data/uiConstants';
-import { Sparkles, X } from 'lucide-react';
 
 const DEFAULT_SYSTEM_PROMPT = `You are Quartermaster AI, an intelligent CRM assistant. You help users manage their sales pipeline, track customer relationships, and automate workflows.
 
@@ -27,12 +26,6 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const [temperature, setTemperature] = useState(() => parseFloat(localStorage.getItem('temperature') || '0.7'));
   const [maxTokens, setMaxTokens] = useState(() => parseInt(localStorage.getItem('maxTokens') || '1000'));
   const [saved, setSaved] = useState(false);
-
-  // AI Helper for improving prompts
-  const [showAIHelper, setShowAIHelper] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [helperInput, setHelperInput] = useState('');
 
   const load = async () => {
     try {
@@ -80,46 +73,6 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const improveSystemPrompt = async () => {
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: 'user',
-              content: `I need help improving my AI system instructions. Current instructions:
-
-${systemPrompt}
-
-${helperInput ? `User request: ${helperInput}` : 'Please rewrite these instructions in second person imperative format (e.g., "Manage customer data" not "You manage customer data"). Make them clear, concise, and action-oriented.'}
-
-Return ONLY the improved system instructions, nothing else. Use second person imperative format throughout.`
-            }
-          ]
-        })
-      });
-
-      const data = await response.json();
-      const improved = data.message || data.content || 'Could not generate suggestion';
-      setAiSuggestion(improved);
-    } catch (error) {
-      console.error('Error improving prompt:', error);
-      setAiSuggestion('Error generating suggestion. Please try again.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const acceptSuggestion = () => {
-    setSystemPrompt(aiSuggestion);
-    setShowAIHelper(false);
-    setAiSuggestion('');
-    setHelperInput('');
-  };
-
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, overflow: 'auto', padding: '20px' }}>
       <div style={{ width: '100%', maxWidth: 700, background: 'white', borderRadius: 12, padding: 24, maxHeight: '90vh', overflow: 'auto' }}>
@@ -159,34 +112,9 @@ Return ONLY the improved system instructions, nothing else. Use second person im
 
             {/* System Instructions */}
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <label style={{ fontSize: 14, fontWeight: '600', color: '#374151', margin: 0 }}>
-                  System Instructions
-                </label>
-                <button
-                  onClick={() => setShowAIHelper(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '4px 8px',
-                    fontSize: 12,
-                    fontWeight: '500',
-                    border: '1px solid #D1D5DB',
-                    borderRadius: 6,
-                    background: 'linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%)',
-                    color: 'white',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  title="Get AI help to improve your system instructions"
-                >
-                  <Sparkles size={14} />
-                  AI Help
-                </button>
-              </div>
+              <label style={{ fontSize: 14, fontWeight: '600', color: '#374151', margin: 0, marginBottom: 8, display: 'block' }}>
+                System Instructions
+              </label>
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
@@ -322,139 +250,6 @@ Return ONLY the improved system instructions, nothing else. Use second person im
         </div>
         </div>
       </div>
-
-      {/* AI Helper Modal */}
-      {showAIHelper && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
-          <div style={{ width: '100%', maxWidth: 800, background: 'white', borderRadius: 12, padding: 24, maxHeight: '90vh', overflow: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 20, fontWeight: '600', color: COLORS.navyDark, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={20} style={{ color: COLORS.gold }} />
-                AI System Instruction Helper
-              </h3>
-              <button
-                onClick={() => { setShowAIHelper(false); setAiSuggestion(''); setHelperInput(''); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
-              >
-                <X size={20} color="#6B7280" />
-              </button>
-            </div>
-
-            <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>
-              Get AI help to improve your system instructions. The AI will analyze what you currently have written and rewrite it in <strong>second person imperative format</strong> (e.g., "Manage customer data" not "You manage customer data").
-            </p>
-
-            {/* Preview of current instructions */}
-            <div style={{ marginBottom: 16, padding: 12, background: '#F3F4F6', borderRadius: 8, border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: 12, fontWeight: '600', color: '#6B7280', marginBottom: 6 }}>
-                📝 Your Current Instructions ({systemPrompt.length} characters):
-              </div>
-              <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#374151', maxHeight: 100, overflow: 'auto', whiteSpace: 'pre-wrap' }}>
-                {systemPrompt.substring(0, 300)}{systemPrompt.length > 300 ? '...' : ''}
-              </div>
-            </div>
-
-            {/* Optional user input */}
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
-                What would you like to improve? (Optional)
-              </label>
-              <input
-                type="text"
-                value={helperInput}
-                onChange={(e) => setHelperInput(e.target.value)}
-                placeholder="e.g., Make it more concise, Add email capabilities, Focus on task management"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  fontSize: 14,
-                  border: '2px solid #E5E7EB',
-                  borderRadius: 8,
-                  outline: 'none'
-                }}
-              />
-            </div>
-
-            {/* Generate button */}
-            <button
-              onClick={improveSystemPrompt}
-              disabled={isGenerating}
-              style={{
-                width: '100%',
-                padding: '12px 20px',
-                fontSize: 14,
-                fontWeight: '600',
-                border: 'none',
-                borderRadius: 8,
-                background: isGenerating ? '#9CA3AF' : `linear-gradient(135deg, ${COLORS.navyDark} 0%, ${COLORS.navyLight} 100%)`,
-                color: 'white',
-                cursor: isGenerating ? 'not-allowed' : 'pointer',
-                marginBottom: 16
-              }}
-            >
-              {isGenerating ? 'Generating...' : '✨ Generate Improved Instructions'}
-            </button>
-
-            {/* AI Suggestion */}
-            {aiSuggestion && (
-              <div>
-                <label style={{ display: 'block', fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 }}>
-                  AI Suggestion:
-                </label>
-                <textarea
-                  value={aiSuggestion}
-                  onChange={(e) => setAiSuggestion(e.target.value)}
-                  rows={12}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    fontSize: 13,
-                    border: '2px solid #10B981',
-                    borderRadius: 8,
-                    outline: 'none',
-                    fontFamily: 'monospace',
-                    resize: 'vertical',
-                    marginBottom: 12
-                  }}
-                />
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button
-                    onClick={acceptSuggestion}
-                    style={{
-                      flex: 1,
-                      padding: '12px 20px',
-                      fontSize: 14,
-                      fontWeight: '600',
-                      border: 'none',
-                      borderRadius: 8,
-                      background: '#10B981',
-                      color: 'white',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ✓ Accept & Use This
-                  </button>
-                  <button
-                    onClick={() => setAiSuggestion('')}
-                    style={{
-                      padding: '12px 20px',
-                      fontSize: 14,
-                      fontWeight: '500',
-                      border: '2px solid #E5E7EB',
-                      borderRadius: 8,
-                      background: 'white',
-                      color: '#6B7280',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Clear
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

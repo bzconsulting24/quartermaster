@@ -50,7 +50,21 @@
       "Bash(cmd //c taskkill //PID 44208 //F)",
       "Bash(netsh advfirewall firewall show rule name=\"Vite Dev Server\")",
       "Bash(netsh advfirewall firewall add rule:*)",
-      "Bash(docker start:*)"
+      "Bash(docker start:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git log:*)",
+      "Bash(docker info:*)",
+      "Bash(/dev/null)",
+      "Bash(docker images:*)",
+      "Bash(npm run prisma:migrate:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npm run prisma:generate:*)",
+      "Bash(docker inspect:*)",
+      "Bash(ss:*)",
+      "Bash(lsof:*)",
+      "Bash(sudo mv:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

@@ -320,11 +320,16 @@ async function main() {
     });
     opportunityRecords[opportunity.name] = { id: record.id };
     if (lead) {
+      await prisma.opportunity.update({
+        where: { id: record.id },
+        data: {
+          leadId: lead.id
+        }
+      });
       await prisma.lead.update({
         where: { id: lead.id },
         data: {
-          status: 'QUALIFIED',
-          opportunityId: record.id
+          status: 'QUALIFIED'
         }
       });
     }

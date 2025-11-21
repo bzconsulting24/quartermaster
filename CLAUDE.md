@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Quartermaster is a full-stack CRM application with AI-powered automation features. It uses React + Vite frontend, Express backend, PostgreSQL database, Redis for job queues, and integrates with OpenAI's GPT-5-nano model for intelligent features.
+Quartermaster is a full-stack CRM application with AI-powered automation and document intelligence features. It uses React + Vite frontend, Express backend, PostgreSQL with pgvector extension, Redis for job queues, and integrates with OpenAI's GPT-5-nano model for intelligent features including RAG (Retrieval-Augmented Generation).
 
-**Multi-Process Architecture**: The application requires three separate processes in development:
+**Multi-Process Architecture**: The application requires 3-4 separate processes in development:
 1. Express API server (`npm run server:dev`) - handles HTTP requests
-2. BullMQ automation worker (`npm run worker:automation`) - processes async jobs
-3. Vite dev server (`npm run dev`) - serves frontend with HMR
+2. BullMQ automation worker (`npm run worker:automation`) - processes workflow automation jobs
+3. BullMQ embedding worker (`npm run worker:embeddings`) - processes document vectorization for RAG
+4. Vite dev server (`npm run dev`) - serves frontend with HMR
 
 **IMPORTANT**: Clone the repo into a directory **without spaces** in the path (e.g., `~/workspace/quartermaster`). `npm install` fails on macOS when the path includes spaces.
 
@@ -21,10 +22,11 @@ Quartermaster is a full-stack CRM application with AI-powered automation feature
 npm install
 npm run prisma:generate
 
-# Start all services locally
+# Start all services locally (requires 3-4 separate terminals)
 npm run server:dev         # Express API on port 4000
-npm run worker:automation  # BullMQ automation worker
-npm run dev                # Vite dev server (separate terminal)
+npm run worker:automation  # BullMQ automation worker (workflows)
+npm run worker:embeddings  # BullMQ embedding worker (document vectorization) - optional
+npm run dev                # Vite dev server
 
 # Database operations
 npm run prisma:migrate     # Run migrations
@@ -76,14 +78,21 @@ git config core.hooksPath .githooks
 - **routes/**: API endpoints organized by entity
   - Core CRUD: `accounts.ts`, `contacts.ts`, `opportunities.ts`, `tasks.ts`, `leads.ts`
   - Business logic: `invoices.ts`, `quotes.ts`, `contracts.ts`, `products.ts`
-  - AI features: `ai.ts` (PDF extraction), `assistant.ts`, `assistantActions.ts`, `assistantMemory.ts`, `assistantFileAnalysis.ts`, `assistantAgentic.ts`, `assistantWorkflow.ts`, `insights.ts`
+  - AI features: `ai.ts` (PDF extraction), `assistant.ts`, `assistantActions.ts`, `assistantMemory.ts`, `assistantFileAnalysis.ts`, `assistantAgentic.ts`, `assistantWorkflow.ts`, `insights.ts`, `vectorSearch.ts` (RAG queries)
   - Automation: `workflows.ts`, `workflowRules.ts`
   - Integrations: `drive.ts`, `onedrive.ts`, `webhook.ts`, `ingest.ts`
   - Utilities: `overview.ts` (dashboard), `reports.ts`, `search.ts`, `events.ts` (SSE), `activities.ts`
   - **helpers.ts**: `asyncHandler` wrapper for error handling
-- **services/**: Business logic (`workflowProcessor.ts` - core automation engine that evaluates WorkflowRules and executes actions)
-- **workers/**: Background job processors (`automationWorker.ts` processes BullMQ jobs from Redis)
-- **jobs/**: Job queue definitions (`automationQueue.ts`)
+- **services/**: Business logic
+  - `workflowProcessor.ts`: Core automation engine that evaluates WorkflowRules and executes actions
+  - `embeddingService.ts`: OpenAI text-embedding-3-small integration for vector embeddings
+  - `chunkingService.ts`: Document chunking for RAG pipeline
+- **workers/**: Background job processors
+  - `automationWorker.ts`: Processes workflow automation jobs from BullMQ
+  - `embeddingWorker.ts`: Processes document vectorization jobs (PDF → chunks → embeddings → pgvector)
+- **jobs/**: Job queue definitions
+  - `automationQueue.ts`: Workflow automation jobs
+  - `embeddingQueue.ts`: Document embedding jobs
 - **events/**: SSE event emitters (`eventBus.ts` - `emitAppEvent()` broadcasts real-time updates)
 - **middleware/**: Express middleware (`errorHandler.ts`)
 - **utils/**: Shared utilities (`stageUtils.ts`, `googleDrive.ts`, `oneDrive.ts`, `aiMemory.ts`)
@@ -109,16 +118,23 @@ git config core.hooksPath .githooks
 - **types.ts**: Shared TypeScript types (Opportunity, Account, Contact, Task, Invoice, etc.)
 - **data/uiConstants.ts**: Color schemes, currency formatting (PHP), date utilities, stage colors
 
-### Database (Prisma)
-- Schema: `prisma/schema.prisma` - PostgreSQL with enums for Stage, AccountType, TaskPriority, InvoiceStatus, etc.
-- Main entities: Account, Contact, Lead, Opportunity, Task, Invoice, Quote, Contract, WorkflowRule, Notification, AIInsight
+### Database (Prisma + pgvector)
+- Schema: `prisma/schema.prisma` - PostgreSQL with pgvector extension for semantic search
+- Docker uses `ankane/pgvector:v0.5.1` image with vector similarity support
+- Main entities: Account, Contact, Lead, Opportunity, Task, Invoice, Quote, Contract, WorkflowRule, Notification, AIInsight, DocumentChunk (with vector embeddings)
+- Enums: Stage, AccountType, TaskPriority, InvoiceStatus, LeadStatus, QuoteStatus, ContractStatus, WorkflowTriggerType, WorkflowActionType, AIInsightType, NotificationType, EmbeddingStatus
 - Generate client after schema changes: `npm run prisma:generate`
 
 ### Key Integrations
-- **OpenAI (GPT-5-nano)**: Invoice/form extraction (`routes/ai.ts`), assistant actions (`routes/assistantActions.ts`)
+- **OpenAI**:
+  - Chat model: `gpt-5-nano` for invoice/form extraction, assistant, agentic workflows
+  - Embedding model: `text-embedding-3-small` for document vectorization (RAG pipeline)
   - Uses `max_completion_tokens` parameter (not `max_tokens`)
-  - Model: `gpt-5-nano`
-- **BullMQ/Redis**: Asynchronous workflow automation, task scheduling
+- **BullMQ/Redis**:
+  - Asynchronous workflow automation via `automation-queue`
+  - Document vectorization pipeline via `embedding-queue`
+  - Separate workers process each queue concurrently
+- **pgvector**: Vector similarity search for RAG queries on document chunks
 - **SSE Events**: `/api/events` endpoint for real-time updates
 - **Google Drive/OneDrive**: File storage integrations
 
@@ -187,6 +203,7 @@ import prisma from '../prismaClient.js';  // Note .js extension for ESM
 - **ESM imports**: Backend uses ES modules with `.js` extensions in imports even for `.ts` source files
   - Example: `import { foo } from './utils/bar.js'` (bar.ts compiles to bar.js)
   - This is required for Node.js ESM module resolution
+- **Coding Style**: Two-space indentation, PascalCase for components, camelCase for functions/variables, explicit exports over defaults
 
 ### API Type Assertions
 When using `fetch().json()` with OpenAI or external APIs, add type assertion to avoid TS18046 errors:
@@ -207,12 +224,16 @@ curl http://localhost:4000/api/events
 
 ## Common Issues
 
-1. **Opportunities page stuck loading**: Restart frontend container to clear Vite proxy cache (`docker-compose restart frontend`)
+1. **Opportunities page stuck loading**: Restart frontend container to clear Vite proxy cache (`docker-compose -f docker-compose.dev.yml restart frontend`)
 2. **Prisma OpenSSL errors**: Ensure `openssl` is installed in Alpine Docker images (`apk add --no-cache openssl`)
 3. **TypeScript build fails**: Run `npm run prisma:generate` before `npm run build:server` (Prisma client must be generated first)
 4. **Docker build "file not found"**: Check `.dockerignore` hasn't excluded required files (note: `.env.example` is explicitly included via `!.env.example`)
-5. **Background jobs not processing**: Ensure `npm run worker:automation` is running alongside API server, or use Docker compose which runs both in backend container
+5. **Background jobs not processing**: Ensure workers are running:
+   - `npm run worker:automation` for workflow automation
+   - `npm run worker:embeddings` for document vectorization (optional, only if using RAG features)
+   - Docker compose runs automation worker in backend container via `ENABLE_WORKER_EVENTS=true`
 6. **Port conflicts**: Check if ports 4000 (API), 5173 (Vite), 5433 (Postgres), 6379 (Redis), or 5556 (Prisma Studio) are already in use
+7. **Vector search not working**: Verify pgvector extension is enabled in database and embedding worker is processing jobs
 
 ## Workflow Automation Architecture
 
@@ -231,7 +252,26 @@ The workflow system uses an event-driven architecture to decouple triggers from 
 - **INVOKE_AI**: Generate AI insights using GPT-5-nano
 - **CREATE_INVOICE**: Auto-create invoices when opportunities reach "Closed Won"
 
-**Critical**: Keep `npm run worker:automation` running alongside the API server, otherwise queued jobs will accumulate in Redis without being processed.
+**Critical**: Keep `npm run worker:automation` running alongside the API server, otherwise queued jobs will accumulate in Redis without being processed. Run `npm run worker:embeddings` if using document vectorization/RAG features.
+
+## Document Intelligence & RAG Pipeline
+
+The application includes a complete RAG (Retrieval-Augmented Generation) system for semantic search over documents:
+
+### Flow: Upload → Chunk → Embed → Store → Query
+1. **Upload**: PDFs uploaded via `/api/ingest` or file analysis endpoints
+2. **Queue**: Document queued to `embedding-queue` via `jobs/embeddingQueue.ts`
+3. **Chunk**: `services/chunkingService.ts` splits document into semantic chunks (overlap for context preservation)
+4. **Embed**: `services/embeddingService.ts` calls OpenAI `text-embedding-3-small` to generate 1536-dimensional vectors
+5. **Store**: Chunks and embeddings stored in `DocumentChunk` table with pgvector column
+6. **Query**: `/api/vector-search` performs similarity search using cosine distance on embeddings
+
+### Embedding Worker
+- Processes jobs from `embedding-queue` (separate from automation queue)
+- Job types: `EMBED_DOCUMENT`, `EMBED_TEXT`, `REINDEX_DOCUMENT`
+- Rate limiting: 50 jobs/minute (aligned with OpenAI rate limits)
+- Concurrency: 5 parallel jobs
+- Run with: `npm run worker:embeddings`
 
 ### Git Workflow Integration
 The repository uses a post-commit hook to automatically rebuild Docker images on every commit. This ensures development images stay synchronized with code changes. The hook rebuilds `Dockerfile.dev` after each commit. Make sure to push commits to GitHub as workflows depend on this for deployments.

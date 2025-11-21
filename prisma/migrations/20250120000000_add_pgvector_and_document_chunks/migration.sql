@@ -4,10 +4,11 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- CreateEnum
 CREATE TYPE "EmbeddingStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED');
 
--- AlterTable Document - Add embedding tracking fields
-ALTER TABLE "Document" ADD COLUMN "embeddingStatus" "EmbeddingStatus" NOT NULL DEFAULT 'PENDING';
-ALTER TABLE "Document" ADD COLUMN "chunkCount" INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE "Document" ADD COLUMN "embeddedAt" TIMESTAMP(3);
+-- AlterTable Document - Add embedding tracking fields (guarded for existing tables)
+ALTER TABLE IF EXISTS "Document"
+    ADD COLUMN IF NOT EXISTS "embeddingStatus" "EmbeddingStatus" NOT NULL DEFAULT 'PENDING',
+    ADD COLUMN IF NOT EXISTS "chunkCount" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "embeddedAt" TIMESTAMP(3);
 
 -- CreateTable DocumentChunk
 CREATE TABLE "DocumentChunk" (
@@ -33,8 +34,7 @@ CREATE INDEX "DocumentChunk_accountId_idx" ON "DocumentChunk"("accountId");
 -- CreateIndex
 CREATE INDEX "DocumentChunk_opportunityId_idx" ON "DocumentChunk"("opportunityId");
 
--- AddForeignKey
-ALTER TABLE "DocumentChunk" ADD CONSTRAINT "DocumentChunk_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- DocumentChunk -> Document foreign key is added once the Document table exists in a later migration.
 
 -- AddForeignKey
 ALTER TABLE "DocumentChunk" ADD CONSTRAINT "DocumentChunk_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "Account"("id") ON DELETE SET NULL ON UPDATE CASCADE;

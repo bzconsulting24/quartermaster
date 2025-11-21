@@ -498,6 +498,7 @@ const AssistantPanel = ({ onClose }: AssistantPanelProps) => {
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
+                          boxShadow: '0 0px 0px rgba(0, 0, 0, 0)',
                           cursor: executingActions ? 'not-allowed' : 'pointer',
                           fontWeight: '600',
                           opacity: executingActions ? 0.6 : 1

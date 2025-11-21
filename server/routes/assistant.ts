@@ -824,5 +824,61 @@ Respond in JSON format when suggesting actions. Be conversational and helpful in
   })
 );
 
-export default router;
+// Helper: improve a system prompt (used by client settings modal)
+router.post(
+  '/prompt-helper',
+  asyncHandler(async (req, res) => {
+    const { instructions, request, model } = req.body as {
+      instructions?: string;
+      request?: string;
+      model?: string;
+    };
 
+    if (!instructions || !instructions.trim()) {
+      return res.status(400).json({ message: 'instructions is required' });
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ message: 'OpenAI API key not configured' });
+    }
+
+    const systemPrompt = 'You rewrite system instructions for an AI assistant. Keep the original intent, convert to second-person imperative, and make them concise, clear, and action-oriented. Do not add extra sections or commentary—return only the improved instructions.';
+    const userPrompt = `Current instructions:\n\n${instructions.trim()}\n\n${request ? `User request: ${request}` : 'Rewrite using second-person imperative. Make it concise, clear, and action-oriented.'}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model || 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.4,
+        max_tokens: 800
+      })
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      return res.status(500).json({ message: 'Failed to generate improved instructions', details: errorBody });
+    }
+
+    const data = await response.json() as any;
+    const suggestion = (data.choices?.[0]?.message?.content ?? '').toString().trim();
+    if (!suggestion) {
+      return res.json({
+        suggestion: '',
+        message: data?.error?.message || 'Could not generate suggestion'
+      });
+    }
+
+    res.json({ suggestion });
+  })
+);
+
+export default router;
