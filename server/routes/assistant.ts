@@ -802,10 +802,17 @@ Respond in JSON format when suggesting actions. Be conversational and helpful in
       const data = await response.json() as any;
       const content = data.choices?.[0]?.message?.content || '{"message":"Sorry, I could not analyze that file."}';
 
+      console.log('🤖 OpenAI raw response length:', content.length);
+      console.log('🤖 OpenAI response preview:', content.substring(0, 200));
+      console.log('🤖 OpenAI response end:', content.substring(content.length - 200));
+
       let parsedResponse;
       try {
         parsedResponse = JSON.parse(content);
-      } catch {
+        console.log('✅ JSON parsed successfully, has actions:', parsedResponse?.actions?.length);
+      } catch (error: any) {
+        console.error('❌ JSON parse failed:', error.message);
+        console.error('❌ Invalid JSON:', content);
         parsedResponse = { message: content };
       }
 
