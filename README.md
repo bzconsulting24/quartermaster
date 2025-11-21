@@ -1,69 +1,125 @@
 # Quartermaster
 
-## Local development
+> A modern, AI-powered CRM application built with React, Express, and PostgreSQL
 
-1. Clone the repo into a directory without spaces in the path (for example `~/workspace/quartermaster`). `npm install` tends to fail on macOS when the path includes spaces such as `/Volumes/JPU-WORKSTATION 2TB/...`, so relocate the project before installing dependencies.
-2. Copy `.env.example` to `.env` and update `DATABASE_URL` plus `REDIS_URL` for your PostgreSQL and Redis instances.
-3. Install dependencies and generate the Prisma client:
+Quartermaster is a full-stack customer relationship management platform featuring intelligent automation, document processing, and real-time insights.
+
+## Features
+
+- **AI-Powered Assistant** - Natural language interface for CRM operations
+- **Document Intelligence** - PDF parsing and semantic search with RAG
+- **Workflow Automation** - Event-driven task creation and notifications
+- **Real-time Updates** - Server-sent events for live data synchronization
+- **Vector Search** - Semantic document search using pgvector
+- **Multi-entity CRM** - Accounts, contacts, opportunities, tasks, invoices, quotes, leads
+
+## Tech Stack
+
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS
+- **Backend:** Node.js, Express, Prisma ORM
+- **Database:** PostgreSQL with pgvector extension
+- **Queue:** BullMQ with Redis
+- **AI:** OpenAI GPT-4o-mini, text-embedding-3-small
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL 14+
+- Redis 6+
+- OpenAI API key
+
+### Installation
+
+1. Clone the repository
+   ```bash
+   git clone https://github.com/bzconsulting24/quartermaster.git
+   cd quartermaster
+   ```
+
+2. Install dependencies
    ```bash
    npm install
    npm run prisma:generate
    ```
-3. Start both Vite and the Express API locally (API + worker):
+
+3. Configure environment variables
    ```bash
-   npm run server:dev    # Express API on port 4000
-   npm run worker:automation   # Automation worker consuming BullMQ jobs
-   npm run dev          # In a separate terminal, start Vite dev server
+   cp .env.example .env
+   # Edit .env with your database URL, Redis URL, and OpenAI API key
    ```
 
-## Docker workflows
+4. Run database migrations
+   ```bash
+   npm run prisma:migrate
+   ```
 
-### Development container
+5. Start development servers
+   ```bash
+   # Terminal 1: API server
+   npm run server:dev
 
-Use the dev-specific configuration for hot reload inside Docker:
+   # Terminal 2: Automation worker
+   npm run worker:automation
 
-```bash
-docker compose -f docker-compose.dev.yml up --build
-```
+   # Terminal 3: Frontend dev server
+   npm run dev
+   ```
 
-This exposes Vite on port `5173` and the API on port `4000`. Source files are bind-mounted so changes on the host trigger reloads inside the container.
+6. Open http://localhost:5173
 
-### Production image
+### Docker Development
 
-The default `Dockerfile` builds the React app, compiled server, and Prisma client:
-
-```bash
-docker build -t quartermaster:latest .
-docker run --env-file .env -p 4000:4000 quartermaster:latest
-```
-
-## Auto-rebuild on commit
-
-A ready-made `post-commit` hook rebuilds the dev image on every commit. Enable it once per clone:
+Start all services with Docker Compose:
 
 ```bash
-git config core.hooksPath .githooks
+docker-compose -f docker-compose.dev.yml up --build
 ```
 
-After enabling, each `git commit` runs:
+Services available at:
+- Frontend: http://localhost:5173
+- API: http://localhost:4000
+- Prisma Studio: http://localhost:5556
 
-```bash
-docker build -f Dockerfile.dev -t quartermaster-dev:latest .
+## Documentation
+
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+
+## Project Structure
+
+```
+quartermaster/
+├── src/              # React frontend
+├── server/           # Express backend
+│   ├── routes/       # API endpoints
+│   ├── services/     # Business logic
+│   └── workers/      # Background job processors
+├── prisma/           # Database schema and migrations
+└── .github/          # GitHub templates and workflows
 ```
 
-This keeps the dev image up to date automatically on the same workstation.
+## Contributing
 
-## Quality checks
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
 
-- `npm run lint` runs TypeScript in `--noEmit` mode against both the frontend (`tsconfig.json`) and backend (`tsconfig.server.json`) configs to catch type regressions quickly.
+- Setting up your development environment
+- Code style and conventions
+- Submitting pull requests
+- Reporting bugs
 
-## AI assistant & automation tips
+## License
 
-- Keep the automation worker (`npm run worker:automation`) running alongside the API. Workflow events trigger tasks, invoices, and insights asynchronously through BullMQ/Redis.
-- The in-app assistant (bot icon in the header) calls `/api/assistant`. You can test responses outside the UI via:
-  ```bash
-  curl -X POST http://localhost:4000/api/assistant \
-    -H "Content-Type: application/json" \
-    -d '{"prompt":"Summarize the pipeline"}'
-  ```
-- Subscribe to the SSE stream at `/api/events` if you are building integrations. Opportunity updates, workflow executions, and notification changes all emit events on this channel.
+See [LICENSE](LICENSE) for details.
+
+## Support
+
+- [Report a bug](https://github.com/bzconsulting24/quartermaster/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/bzconsulting24/quartermaster/issues/new?template=feature_request.yml)
+- [Join discussions](https://github.com/bzconsulting24/quartermaster/discussions)
+
+---
+
+Built with ❤️ by the Quartermaster team
