@@ -109,6 +109,13 @@ enum NotificationStatus {
   READ
 }
 
+enum EmbeddingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Account {
   id         Int           @id @default(autoincrement())
   name       String       @unique
@@ -131,6 +138,7 @@ model Account {
   quotes         Quote[]
   contracts      Contract[]
   notifications  Notification[]
+  documentChunks DocumentChunk[]
 }
 
 model Contact {
@@ -175,6 +183,7 @@ model Opportunity {
   quotes     Quote[]
   contracts  Contract[]
   insights   AIInsight[]
+  documentChunks DocumentChunk[]
 
   lead     Lead?    @relation("LeadOpportunity", fields: [leadId], references: [id])
   leadId   Int?     @unique
@@ -194,15 +203,42 @@ model Activity {
 }
 
 model Document {
-  id          Int       @id @default(autoincrement())
-  name        String
-  type        String
-  size        String
-  uploadedBy  String
-  uploadedAt  DateTime  @default(now())
+  id               Int              @id @default(autoincrement())
+  name             String
+  type             String
+  size             String
+  uploadedBy       String
+  uploadedAt       DateTime         @default(now())
+  embeddingStatus  EmbeddingStatus  @default(PENDING)
+  chunkCount       Int              @default(0)
+  embeddedAt       DateTime?
 
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
   opportunityId Int?
+
+  chunks DocumentChunk[]
+}
+
+model DocumentChunk {
+  id          Int       @id @default(autoincrement())
+  content     String    @db.Text
+  embedding   Unsupported("vector(1536)")?
+  metadata    Json?
+  tokens      Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  document    Document? @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId  Int?
+
+  account     Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  accountId   Int?
+
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  opportunityId Int?
+
+  @@index([documentId])
+  @@index([accountId])
+  @@index([opportunityId])
 }
 
 model Task {

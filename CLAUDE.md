@@ -43,13 +43,17 @@ npm run lint               # Type check both frontend & backend
 docker-compose -f docker-compose.dev.yml up --build
 
 # Services exposed:
-# - Frontend: http://localhost:5173
+# - Frontend (Vite): http://localhost:5173
 # - Backend API: http://localhost:4000
 # - Prisma Studio: http://localhost:5556
-# - PostgreSQL: localhost:5433
+# - PostgreSQL: localhost:5433 (maps to internal 5432)
 # - Redis: localhost:6379
 
-# Production image
+# Backend includes both API server AND automation worker (ENABLE_WORKER_EVENTS=true)
+# Frontend container runs Vite dev server with hot reload
+# Source files are bind-mounted for live updates
+
+# Production image (single-process: API + static files, no separate worker)
 docker build -t quartermaster:latest .
 docker run --env-file .env -p 4000:4000 quartermaster:latest
 ```
@@ -64,33 +68,46 @@ git config core.hooksPath .githooks
 
 ### Backend Structure (`server/`)
 - **index.ts**: Express app setup, middleware, route registration
+  - Mounts 27+ route handlers under `/api/*` prefixes
+  - Serves static frontend bundle (`dist/`) in production when available
+  - Uses catch-all route for SPA fallback (routes non-API paths to `index.html`)
+  - Health check available at `/api/health`
 - **prismaClient.ts**: Singleton Prisma instance (prevents connection pool issues)
-- **routes/**: API endpoints organized by entity (27 route files)
+- **routes/**: API endpoints organized by entity
   - Core CRUD: `accounts.ts`, `contacts.ts`, `opportunities.ts`, `tasks.ts`, `leads.ts`
   - Business logic: `invoices.ts`, `quotes.ts`, `contracts.ts`, `products.ts`
-  - AI features: `ai.ts` (PDF extraction), `assistant.ts`, `assistantActions.ts`, `insights.ts`
+  - AI features: `ai.ts` (PDF extraction), `assistant.ts`, `assistantActions.ts`, `assistantMemory.ts`, `assistantFileAnalysis.ts`, `assistantAgentic.ts`, `assistantWorkflow.ts`, `insights.ts`
   - Automation: `workflows.ts`, `workflowRules.ts`
-  - Integrations: `drive.ts`, `onedrive.ts`, `webhook.ts`
-  - Utilities: `overview.ts` (dashboard), `reports.ts`, `search.ts`, `events.ts` (SSE)
+  - Integrations: `drive.ts`, `onedrive.ts`, `webhook.ts`, `ingest.ts`
+  - Utilities: `overview.ts` (dashboard), `reports.ts`, `search.ts`, `events.ts` (SSE), `activities.ts`
   - **helpers.ts**: `asyncHandler` wrapper for error handling
-- **services/**: Business logic (`workflowProcessor.ts` - core automation engine)
-- **workers/**: Background job processors (`automationWorker.ts` processes BullMQ jobs)
+- **services/**: Business logic (`workflowProcessor.ts` - core automation engine that evaluates WorkflowRules and executes actions)
+- **workers/**: Background job processors (`automationWorker.ts` processes BullMQ jobs from Redis)
 - **jobs/**: Job queue definitions (`automationQueue.ts`)
-- **events/**: SSE event emitters (`eventBus.ts`)
+- **events/**: SSE event emitters (`eventBus.ts` - `emitAppEvent()` broadcasts real-time updates)
 - **middleware/**: Express middleware (`errorHandler.ts`)
 - **utils/**: Shared utilities (`stageUtils.ts`, `googleDrive.ts`, `oneDrive.ts`, `aiMemory.ts`)
 - **config/**: Configuration (`redis.ts`)
 
 ### Frontend Structure (`src/`)
 - **App.tsx**: Main application shell with tab-based navigation
+  - Uses React Router with path-to-tab mapping (`/opportunities`, `/accounts`, etc.)
+  - Manages global state for opportunities, notifications, assistant panel, command palette
+  - Keyboard shortcuts: CMD+K (command palette), CMD+/ (assistant toggle)
+  - Focus mode support for distraction-free work
 - **components/**: View components for each CRM entity
   - Pattern: `{Entity}View.tsx` for list views, `{Entity}DetailModal.tsx` for edit modals
-  - Core views: HomeView, AccountsView, ContactsView, InvoicesView, LeadsView, QuotesView, TasksView, etc.
+  - Core views: HomeView, AccountsView, ContactsView, InvoicesView, LeadsView, QuotesView, TasksView, CalendarView, ReportsView, ContractsView, CustomerInformationView
   - **BZPipeline.tsx**: Special Kanban board component for opportunities with drag-drop stage management
-  - **AssistantPanel.tsx**: AI chat interface that calls `/api/assistant`
-  - **CommandPalette.tsx**: Keyboard shortcut menu (CMD+K)
-- **types.ts**: Shared TypeScript types
-- **data/uiConstants.ts**: Color schemes, currency formatting (PHP), date utilities
+  - **AssistantPanel.tsx**: AI chat interface that calls `/api/assistant` endpoints
+  - **CommandPalette.tsx**: Keyboard shortcut menu (CMD+K) for quick navigation
+  - **BZHeader.tsx**: Top navigation bar with user menu, notifications, assistant toggle
+  - **NavigationTabs.tsx**: Tab navigation component for switching between views
+  - **AIFloatingButton.tsx**: Floating action button to open assistant panel
+  - **NotificationsPanel.tsx**: Side panel for real-time notifications
+  - **SettingsModal.tsx**: User settings and preferences
+- **types.ts**: Shared TypeScript types (Opportunity, Account, Contact, Task, Invoice, etc.)
+- **data/uiConstants.ts**: Color schemes, currency formatting (PHP), date utilities, stage colors
 
 ### Database (Prisma)
 - Schema: `prisma/schema.prisma` - PostgreSQL with enums for Stage, AccountType, TaskPriority, InvoiceStatus, etc.
@@ -141,14 +158,16 @@ Routes automatically serialize opportunities with readable stage labels before s
 - Frontend components can subscribe to real-time notifications, workflow updates, opportunity changes
 
 ### Vite Proxy Configuration
-- Frontend proxies `/api/*` to backend
-- Docker: targets `http://backend:4000` when `DOCKER_ENV=true`
-- Local: targets `http://localhost:4000`
+- Frontend proxies `/api/*` to backend (configured in `vite.config.ts`)
+- Docker: targets `http://backend:4000` when `DOCKER_ENV=true` environment variable is set
+- Local: targets `http://localhost:4000` for standalone development
+- Vite dev server also allows Tailscale hosts (`.ts.net`) and local network access (`.local`)
 
 ### Environment Variables
 - Required: `DATABASE_URL`, `OPENAI_API_KEY`, `PORT`
-- Optional: `REDIS_URL`, `WEBHOOK_SECRET`, `GITHUB_TOKEN`
+- Optional: `REDIS_URL`, `WEBHOOK_SECRET`, `GITHUB_TOKEN`, `NODE_ENV`, `DOCKER_ENV`, `ENABLE_WORKER_EVENTS`
 - Copy `.env.example` to `.env` for local development
+- Docker compose automatically overrides `DATABASE_URL` and `REDIS_URL` to use container service names
 
 ### Docker Build Requirements
 - `.dockerignore` includes `.env.*` but **excludes** `.env.example` (via `!.env.example` exception)
@@ -188,10 +207,12 @@ curl http://localhost:4000/api/events
 
 ## Common Issues
 
-1. **Opportunities page stuck loading**: Restart frontend container to clear Vite proxy cache
-2. **Prisma OpenSSL errors**: Ensure `openssl` is installed in Alpine Docker images
-3. **TypeScript build fails**: Run `prisma:generate` before `build:server`
-4. **Docker build "file not found"**: Check `.dockerignore` hasn't excluded required files
+1. **Opportunities page stuck loading**: Restart frontend container to clear Vite proxy cache (`docker-compose restart frontend`)
+2. **Prisma OpenSSL errors**: Ensure `openssl` is installed in Alpine Docker images (`apk add --no-cache openssl`)
+3. **TypeScript build fails**: Run `npm run prisma:generate` before `npm run build:server` (Prisma client must be generated first)
+4. **Docker build "file not found"**: Check `.dockerignore` hasn't excluded required files (note: `.env.example` is explicitly included via `!.env.example`)
+5. **Background jobs not processing**: Ensure `npm run worker:automation` is running alongside API server, or use Docker compose which runs both in backend container
+6. **Port conflicts**: Check if ports 4000 (API), 5173 (Vite), 5433 (Postgres), 6379 (Redis), or 5556 (Prisma Studio) are already in use
 
 ## Workflow Automation Architecture
 
@@ -211,4 +232,6 @@ The workflow system uses an event-driven architecture to decouple triggers from 
 - **CREATE_INVOICE**: Auto-create invoices when opportunities reach "Closed Won"
 
 **Critical**: Keep `npm run worker:automation` running alongside the API server, otherwise queued jobs will accumulate in Redis without being processed.
-- Add to memory. Make sure to push commits tot github because we are using workflows to rebuild on commit
+
+### Git Workflow Integration
+The repository uses a post-commit hook to automatically rebuild Docker images on every commit. This ensures development images stay synchronized with code changes. The hook rebuilds `Dockerfile.dev` after each commit. Make sure to push commits to GitHub as workflows depend on this for deployments.

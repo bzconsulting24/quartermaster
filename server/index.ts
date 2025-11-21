@@ -34,6 +34,7 @@ import aiRouter from './routes/ai.js';
 import webhookRouter from './routes/webhook.js';
 import driveRouter from './routes/drive.js';
 import oneDriveRouter from './routes/onedrive.js';
+import vectorSearchRouter from './routes/vectorSearch.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -80,6 +81,7 @@ app.use('/api/ai', aiRouter);
 app.use('/api/drive', driveRouter);
 app.use('/api/onedrive', oneDriveRouter);
 app.use('/api/webhook', webhookRouter);
+app.use('/api/vector-search', vectorSearchRouter);
 
 if (hasClientBundle) {
   app.use(express.static(clientDistPath));

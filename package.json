@@ -17,6 +17,7 @@
     "start": "node dist-server/index.js",
     "dev:server": "ts-node --project tsconfig.server.json server/index.ts",
     "worker:automation": "tsx server/workers/automationWorker.ts",
+    "worker:embeddings": "tsx server/workers/embeddingWorker.ts",
     "lint": "./node_modules/.bin/tsc -p tsconfig.json --noEmit && ./node_modules/.bin/tsc -p tsconfig.server.json --noEmit"
   },
   "dependencies": {

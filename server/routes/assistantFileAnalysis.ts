@@ -3,6 +3,7 @@ import multer from 'multer';
 import * as XLSX from 'xlsx';
 import { asyncHandler } from './helpers.js';
 import prisma from '../prismaClient.js';
+import { queueDocumentEmbedding } from '../jobs/embeddingQueue.js';
 
 const router = Router();
 
@@ -251,6 +252,40 @@ Be smart about detecting duplicates - check existing accounts/contacts before su
         parsedResponse = JSON.parse(content);
       } catch {
         parsedResponse = { message: content };
+      }
+
+      // Queue for vectorization if it's a data file
+      let embeddingJobId = null;
+      if ((fileType === 'Excel' || fileType === 'CSV') && Array.isArray(fileData) && fileData.length > 0) {
+        try {
+          // Create a document record
+          const document = await prisma.document.create({
+            data: {
+              name: req.file.originalname,
+              type: req.file.mimetype,
+              size: `${Math.round(req.file.size / 1024)} KB`,
+              uploadedBy: 'User',
+              embeddingStatus: 'PENDING'
+            }
+          });
+
+          // Queue for embedding with JSON content
+          embeddingJobId = await queueDocumentEmbedding(
+            document.id,
+            JSON.stringify(fileData),
+            fileType === 'Excel' ? 'excel' : 'csv',
+            {
+              fileName: req.file.originalname,
+              rowCount: fileData.length
+            }
+          );
+
+          parsedResponse.embeddingJobId = embeddingJobId;
+          parsedResponse.documentId = document.id;
+        } catch (embeddingError) {
+          console.error('Error queuing embedding:', embeddingError);
+          // Don't fail the request if embedding queue fails
+        }
       }
 
       res.json(parsedResponse);

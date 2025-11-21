@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import prisma from '../prismaClient.js';
+import { embeddingService } from './embeddingService.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -173,6 +174,35 @@ const CRM_FUNCTIONS = [
         required: ['accounts']
       }
     }
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'search_documents',
+      description: 'Search through uploaded documents (PDFs, Excel files, etc.) using semantic search. Use this to find relevant information from past documents, invoices, contracts, or data files.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'The search query - describe what information you are looking for'
+          },
+          topK: {
+            type: 'number',
+            description: 'Number of results to return (default: 5, max: 20)'
+          },
+          accountId: {
+            type: 'number',
+            description: 'Optional: filter results by account ID'
+          },
+          opportunityId: {
+            type: 'number',
+            description: 'Optional: filter results by opportunity ID'
+          }
+        },
+        required: ['query']
+      }
+    }
   }
 ];
 
@@ -183,9 +213,10 @@ const ASSISTANT_INSTRUCTIONS = `You are Quartermaster AI, an autonomous CRM assi
 You can:
 1. **Analyze files** - Use code interpreter to parse Excel, CSV, and PDF files
 2. **Query CRM data** - Call get_crm_context to access accounts, contacts, opportunities, etc.
-3. **Create records** - Use create_* functions to add data to the CRM
-4. **Plan multi-step workflows** - Break complex tasks into steps and execute them
-5. **Handle errors** - Retry failed operations and adapt your approach
+3. **Search documents** - Use search_documents to find information in uploaded PDFs, invoices, contracts, and data files using semantic search
+4. **Create records** - Use create_* functions to add data to the CRM
+5. **Plan multi-step workflows** - Break complex tasks into steps and execute them
+6. **Handle errors** - Retry failed operations and adapt your approach
 
 # Operating Principles
 
@@ -446,6 +477,73 @@ export async function executeCRMFunction(name: string, args: any): Promise<any> 
         failed: failCount,
         total: results.length,
         results
+      };
+    }
+
+    case 'search_documents': {
+      const { query, topK = 5, accountId, opportunityId } = args;
+
+      // Step 1: Generate embedding for the query
+      const { embedding } = await embeddingService.generateEmbedding(query);
+
+      // Step 2: Build the search query with filters
+      const filters: string[] = [];
+      const params: any[] = [];
+      let paramIndex = 1;
+
+      // Format embedding as PostgreSQL vector
+      const vectorString = `[${embedding.join(',')}]`;
+      params.push(vectorString);
+      const vectorParamIndex = paramIndex++;
+
+      if (accountId) {
+        params.push(accountId);
+        filters.push(`"accountId" = $${paramIndex++}`);
+      }
+
+      if (opportunityId) {
+        params.push(opportunityId);
+        filters.push(`"opportunityId" = $${paramIndex++}`);
+      }
+
+      const whereClause = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+
+      const limitValue = Math.min(Math.max(topK, 1), 20); // Clamp between 1 and 20
+      params.push(limitValue);
+      const limitParamIndex = paramIndex++;
+
+      // Step 3: Execute similarity search
+      const results = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT
+          id,
+          content,
+          metadata,
+          "documentId",
+          "accountId",
+          "opportunityId",
+          1 - (embedding <=> $${vectorParamIndex}::vector) AS similarity
+        FROM "DocumentChunk"
+        ${whereClause}
+        ORDER BY embedding <=> $${vectorParamIndex}::vector
+        LIMIT $${limitParamIndex}
+      `, ...params);
+
+      // Step 4: Format results for the assistant
+      const formattedResults = results.map(chunk => ({
+        content: chunk.content,
+        similarity: parseFloat(chunk.similarity.toFixed(3)),
+        metadata: chunk.metadata,
+        documentId: chunk.documentId,
+        accountId: chunk.accountId,
+        opportunityId: chunk.opportunityId
+      }));
+
+      return {
+        success: true,
+        query,
+        results: formattedResults,
+        count: formattedResults.length,
+        message: `Found ${formattedResults.length} relevant document chunks`
       };
     }
 

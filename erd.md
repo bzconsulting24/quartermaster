@@ -123,6 +123,15 @@ WORKFLOW WORKFLOW
 READ READ
         }
     
+
+
+        EmbeddingStatus {
+            PENDING PENDING
+PROCESSING PROCESSING
+COMPLETED COMPLETED
+FAILED FAILED
+        }
+    
   "Account" {
     Int id "🗝️"
     String name 
@@ -185,6 +194,18 @@ READ READ
     String size 
     String uploadedBy 
     DateTime uploadedAt 
+    EmbeddingStatus embeddingStatus 
+    Int chunkCount 
+    DateTime embeddedAt "❓"
+    }
+  
+
+  "DocumentChunk" {
+    Int id "🗝️"
+    String content 
+    Json metadata "❓"
+    Int tokens 
+    DateTime createdAt 
     }
   
 
@@ -353,6 +374,7 @@ READ READ
     "Account" o{--}o "Quote" : ""
     "Account" o{--}o "Contract" : ""
     "Account" o{--}o "Notification" : ""
+    "Account" o{--}o "DocumentChunk" : ""
     "Contact" o|--|| "Account" : "account"
     "Contact" o{--}o "Opportunity" : ""
     "Opportunity" o|--|| "Stage" : "enum:stage"
@@ -364,10 +386,16 @@ READ READ
     "Opportunity" o{--}o "Quote" : ""
     "Opportunity" o{--}o "Contract" : ""
     "Opportunity" o{--}o "AIInsight" : ""
+    "Opportunity" o{--}o "DocumentChunk" : ""
     "Opportunity" o|--|o "Lead" : "lead"
     "Activity" o|--|| "ActivityType" : "enum:type"
     "Activity" o|--|o "Opportunity" : "opportunity"
+    "Document" o|--|| "EmbeddingStatus" : "enum:embeddingStatus"
     "Document" o|--|o "Opportunity" : "opportunity"
+    "Document" o{--}o "DocumentChunk" : ""
+    "DocumentChunk" o|--|o "Document" : "document"
+    "DocumentChunk" o|--|o "Account" : "account"
+    "DocumentChunk" o|--|o "Opportunity" : "opportunity"
     "Task" o|--|| "TaskPriority" : "enum:priority"
     "Task" o|--|| "TaskStatus" : "enum:status"
     "Task" o|--|o "Account" : "account"
